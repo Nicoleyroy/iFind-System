@@ -1,5 +1,8 @@
 import React, {useEffect, useState} from 'react'
-
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import Login from './components/login'
+import LostItemManagement from './components/user/Lost-Item-Management'
+import Register from './components/register'
 
 function App() {
 
@@ -19,9 +22,17 @@ function App() {
 
 
   return (
-    <div>
-      
-    </div>
+      <Router>
+
+      <Routes>
+
+          <Route path="/" element={<Login />} />
+          <Route path="/Lost-Items" element={<LostItemManagement />} />
+          <Route path="/register" element={<Register />} />
+
+
+      </Routes>
+    </Router>
   )
 }
 
