@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
+import { GoogleLogin } from "@react-oauth/google";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -17,30 +18,41 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!captchaValue) {
-      alert("Please complete the reCAPTCHA");
-      return;
-    }
-
-    try {
-      const response = await fetch("http://localhost:5000/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alert("Login successful!");
-        navigate("/dashboard");
-      } else {
-        alert(data.error || "Login failed");
+      if (!captchaValue) {
+        alert("Please complete the reCAPTCHA");
+        return;
       }
-    } catch (err) {
-      console.error(err);
-      alert("Error connecting to server");
-    }
+
+      try {
+        const response = await fetch("http://localhost:5000/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          alert("Login successful!");
+          navigate("/dashboard");
+        } else {
+          alert(data.error || "Login failed");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Error connecting to server");
+      }
+  };
+
+  const handleGoogleSuccess = (credentialResponse) => {
+    // const decoded = jwt_decode(credentialResponse.credential);
+    // console.log("Google User:", decoded);
+    // alert(`Welcome ${decoded.name}!`);
+    navigate("/");
+  };
+
+  const handleGoogleError = () => {
+    alert("Google Sign-In failed. Please try again.");
   };
 
   return (
@@ -69,10 +81,10 @@ const Login = () => {
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
             />
 
-            {/* ✅ reCAPTCHA */}
+            {/*  reCAPTCHA */}
             <div className="flex justify-center my-4">
               <ReCAPTCHA
-                sitekey="6LepYPArAAAAAFkkMgW82_pHWpvGRiKXa3ZSTBqT" // ← replace this with your real site key
+                sitekey="6LepYPArAAAAAFkkMgW82_pHWpvGRiKXa3ZSTBqT"
                 onChange={handleCaptchaChange}
               />
             </div>
@@ -86,34 +98,32 @@ const Login = () => {
                 Forgot password?
               </Link>
             </div>
-
-             <Link to="/">
-                  <button
-              type="submit"
-              className="w-full bg-[#8B0000] text-white rounded-lg py-2 font-semibold hover:bg-[#600000] transition"
-            >
-              Log in
-            </button>
-              </Link>
-          
-
+ 
+    
+              <button
+                type="submit"
+                className="w-full bg-[#8B0000] text-white rounded-lg py-2 font-semibold hover:bg-[#600000] transition"
+              >
+                Log in
+              </button>
+    
             <div className="flex items-center justify-center text-gray-400 text-sm my-2">
               <span className="border-t border-gray-300 w-20"></span>
               <span className="mx-3">or</span>
               <span className="border-t border-gray-300 w-20"></span>
             </div>
 
-            <button
-              type="button"
-              className="flex items-center justify-center gap-2 w-full border border-gray-300 rounded-lg py-2 hover:bg-gray-100 transition"
-            >
-              <span className="text-red-500 text-xl font-bold">G</span>
-              <span className="text-gray-700">Sign in with Google</span>
-            </button>
+            <Link to="/">
+              <div className="flex justify-center">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                />
+              </div>
+            </Link>
           </form>
         </div>
 
-        {/* RIGHT - Gradient Welcome */}
         <div className="hidden md:flex w-1/2 bg-gradient-to-b from-[#8B0000] via-[#600000] to-[#3E0703] text-white flex-col items-center justify-center p-10">
           <h2 className="text-4xl font-bold mb-2">Hello!</h2>
           <p className="mb-6 text-lg">Don’t have an account yet?</p>

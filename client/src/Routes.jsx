@@ -1,7 +1,10 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Login from "./components/Login";
+import Login from "./components/login";
 import Register from "./components/Register";
 import App from "./App";
+import { GoogleOAuthProvider } from "@react-oauth/google";
+
+const CLIENT_ID = "981315655353-emie91kjn834i4gnlmg34bhir28vbvgg.apps.googleusercontent.com";
 
 function Routes() {
   const routes = createBrowserRouter([
@@ -19,7 +22,11 @@ function Routes() {
     },
   ]);
 
-  return <RouterProvider router={routes} />;
+  return (
+    <GoogleOAuthProvider clientId={CLIENT_ID}>
+      <RouterProvider router={routes} />
+    </GoogleOAuthProvider>
+  );
 }
 
 export default Routes;

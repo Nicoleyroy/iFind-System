@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
-const uri = "mongodb+srv://Nyx:nicoleyroy@ifind.srcyztd.mongodb.net/?retryWrites=true&w=majority&appName=ifind";
-const localDB = 'mongodb://localhost:27017/'
+const uri = "mongodb+srv://Nyx:nicoleyroy@ifind.srcyztd.mongodb.net/?appName=ifind";
+const localDB = 'mongodb://localhost:5000/'
 
 const connectToDB = async () => {
     try {
