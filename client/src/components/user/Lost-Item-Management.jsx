@@ -1,12 +1,12 @@
-import React, { useState, useMemo } from "react";
-import { useNavigate, Link } from 'react-router-dom';
-import Navbar from "../navbar";
+import { Link } from "react-router-dom";
+import Navbar from "../Navbar";
 
-function LostItemManagement() {
- 
+const LostItemManagement = () => {
   return (
-  <h1>hi</h1>
+ 
+      <Navbar />
+
   );
-}
+};
 
 export default LostItemManagement;

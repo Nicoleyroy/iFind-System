@@ -17,7 +17,6 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match!");
       return;
@@ -29,9 +28,7 @@ const Register = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-
       const data = await response.json();
-
       if (response.ok) {
         alert("Registration successful!");
         navigate("/login");
@@ -46,8 +43,19 @@ const Register = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-100 items-center justify-center p-4">
-      <div className="flex w-full max-w-5xl bg-white shadow-xl rounded-2xl overflow-hidden">
-        {/* Left side – Form */}
+      <div className="flex w-full max-w-5xl bg-white shadow-2xl rounded-3xl overflow-hidden">
+        {/* LEFT - Gradient Welcome */}
+        <div className="hidden md:flex w-1/2 bg-gradient-to-b from-[#8B0000] via-[#600000] to-[#3E0703] text-white flex-col items-center justify-center p-10 ">
+          <h2 className="text-4xl font-bold mb-2">Welcome Back!</h2>
+          <p className="mb-6 text-lg">Already have an account?</p>
+          <Link to="/login">
+            <button className="border-2 border-white rounded-full px-6 py-2 hover:bg-white hover:text-[#3E0703] transition-all">
+              Log in
+            </button>
+          </Link>
+        </div>
+
+        {/* RIGHT - Form */}
         <div className="w-full md:w-1/2 p-10">
           <h1 className="text-3xl font-bold text-gray-800 mb-6">
             Create your account
@@ -60,14 +68,14 @@ const Register = () => {
                 name="firstName"
                 placeholder="First Name"
                 onChange={handleChange}
-                className="w-1/2 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-1/2 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
               />
               <input
                 type="text"
                 name="lastName"
                 placeholder="Last Name"
                 onChange={handleChange}
-                className="w-1/2 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-1/2 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
               />
             </div>
 
@@ -76,7 +84,7 @@ const Register = () => {
               name="email"
               placeholder="Email"
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
             />
 
             <input
@@ -84,7 +92,7 @@ const Register = () => {
               name="password"
               placeholder="Password"
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
             />
 
             <input
@@ -92,7 +100,7 @@ const Register = () => {
               name="confirmPassword"
               placeholder="Confirm Password"
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
             />
 
             <div className="flex items-center justify-center text-gray-400 text-sm my-2">
@@ -108,25 +116,16 @@ const Register = () => {
               <span className="text-red-500 text-xl font-bold">G</span>
               <span className="text-gray-700">Sign up with Google</span>
             </button>
-
-            <button
+          <Link to="/login">
+             <button
               type="submit"
-              className="w-full bg-blue-600 text-white rounded-lg py-2 font-semibold hover:bg-blue-700 transition"
+              className="w-full bg-[#8B0000] text-white rounded-lg py-2 font-semibold hover:bg-[#600000] transition"
             >
               Create account
             </button>
-          </form>
-        </div>
-
-        {/* Right side – Welcome section */}
-        <div className="hidden md:flex w-1/2 bg-blue-600 text-white flex-col items-center justify-center p-10">
-          <h2 className="text-3xl font-bold mb-2">Welcome Back!</h2>
-          <p className="mb-6">Already have an account?</p>
-          <Link to="/login">
-            <button className="border border-white rounded-lg px-6 py-2 hover:bg-white hover:text-blue-600 transition">
-              Log in
-            </button>
           </Link>
+           
+          </form>
         </div>
       </div>
     </div>
@@ -134,4 +133,3 @@ const Register = () => {
 };
 
 export default Register;
- 

@@ -1,185 +1,127 @@
-import React, { useState, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import ReCAPTCHA from 'react-google-recaptcha';
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import ReCAPTCHA from "react-google-recaptcha";
 
 const Login = () => {
-  const [modalStep, setModalStep] = useState(null);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    remember: false,
-  });
-  const [recaptchaValue, setRecaptchaValue] = useState(null);
-  const [errors, setErrors] = useState({});
-  const recaptchaRef = useRef(null);
   const navigate = useNavigate();
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [captchaValue, setCaptchaValue] = useState(null);
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: '',
-      }));
-    }
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const handleCaptchaChange = (value) => {
+    setCaptchaValue(value);
   };
 
-  const handleRecaptchaChange = (value) => {
-    setRecaptchaValue(value);
-    if (errors.recaptcha) {
-      setErrors((prev) => ({
-        ...prev,
-        recaptcha: '',
-      }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
-    }
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    }
-    if (!recaptchaValue) {
-      newErrors.recaptcha = 'Please complete the reCAPTCHA verification';
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      console.log('Form submitted:', { ...formData, recaptcha: recaptchaValue });
-      navigate('/Lost-Items');
+
+    if (!captchaValue) {
+      alert("Please complete the reCAPTCHA");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:5000/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Login successful!");
+        navigate("/dashboard");
+      } else {
+        alert(data.error || "Login failed");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error connecting to server");
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100">
-      <div className="flex w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden">
-        {/* Left Section */}
-        <div className="w-1/2 bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex flex-col justify-center items-center p-10">
-          <h2 className="text-4xl font-bold mb-3">Hello, Welcome!</h2>
-          <p className="text-lg mb-6">Don't have an account?</p>
-          <Link to="/register">
-            <button className="px-6 py-2 border-2 border-white rounded-full hover:bg-white hover:text-blue-700 transition-all">
-              Register
-            </button>
-          </Link>
-        </div>
-
-        {/* Right Section */}
-        <div className="w-1/2 p-10">
-          <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">
-            Log In
+    <div className="flex min-h-screen bg-gray-100 items-center justify-center p-4">
+      <div className="flex w-full max-w-5xl bg-white shadow-2xl rounded-3xl overflow-hidden">
+        {/* LEFT - Form */}
+        <div className="w-full md:w-1/2 p-10">
+          <h1 className="text-3xl font-bold text-gray-800 mb-6">
+            Welcome Back
           </h1>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email */}
-            <div>
-              <input
-                type="email"
-                name="email"
-                placeholder="Email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className={`w-full px-4 py-3 rounded-lg border ${
-                  errors.email
-                    ? 'border-red-500'
-                    : 'border-gray-300 focus:border-indigo-500'
-                } focus:ring-2 focus:ring-indigo-200 outline-none transition`}
-              />
-              {errors.email && (
-                <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-              )}
-            </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
+            />
 
-            {/* Password */}
-            <div>
-              <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className={`w-full px-4 py-3 rounded-lg border ${
-                  errors.password
-                    ? 'border-red-500'
-                    : 'border-gray-300 focus:border-indigo-500'
-                } focus:ring-2 focus:ring-indigo-200 outline-none transition`}
-              />
-              {errors.password && (
-                <p className="text-red-500 text-sm mt-1">{errors.password}</p>
-              )}
-            </div>
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
+            />
 
-            {/* Remember / Forgot */}
-            <div className="flex justify-between items-center text-sm">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  name="remember"
-                  checked={formData.remember}
-                  onChange={handleInputChange}
-                  className="accent-indigo-600"
-                />
-                <span className="text-gray-700">Remember me</span>
-              </label>
-              <button
-                type="button"
-                onClick={() => setModalStep('forgot')}
-                className="text-indigo-600 hover:underline"
-              >
-                Forgot password?
-              </button>
-            </div>
-
-            {/* reCAPTCHA */}
-            <div>
+            {/* ✅ reCAPTCHA */}
+            <div className="flex justify-center my-4">
               <ReCAPTCHA
-                ref={recaptchaRef}
-                sitekey="6LepYPArAAAAAFkkMgW82_pHWpvGRiKXa3ZSTBqT"
-                onChange={handleRecaptchaChange}
+                sitekey="6LepYPArAAAAAFkkMgW82_pHWpvGRiKXa3ZSTBqT" // ← replace this with your real site key
+                onChange={handleCaptchaChange}
               />
-              {errors.recaptcha && (
-                <p className="text-red-500 text-sm mt-1">{errors.recaptcha}</p>
-              )}
             </div>
 
-            <div className="flex items-center justify-center space-x-4">
-              <div className="h-px bg-gray-300 flex-1" />
-              <span className="text-gray-500 text-sm">or</span>
-              <div className="h-px bg-gray-300 flex-1" />
+            <div className="flex justify-between text-sm text-gray-600">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" className="accent-[#8B0000]" />
+                Remember me
+              </label>
+              <Link to="/forgot" className="text-[#8B0000] hover:underline">
+                Forgot password?
+              </Link>
             </div>
 
-            {/* Google Button */}
+             <Link to="/">
+                  <button
+              type="submit"
+              className="w-full bg-[#8B0000] text-white rounded-lg py-2 font-semibold hover:bg-[#600000] transition"
+            >
+              Log in
+            </button>
+              </Link>
+          
+
+            <div className="flex items-center justify-center text-gray-400 text-sm my-2">
+              <span className="border-t border-gray-300 w-20"></span>
+              <span className="mx-3">or</span>
+              <span className="border-t border-gray-300 w-20"></span>
+            </div>
+
             <button
               type="button"
-              className="w-full bg-white border border-gray-300 py-3 rounded-lg shadow-sm flex justify-center items-center space-x-3 hover:bg-gray-50 transition"
+              className="flex items-center justify-center gap-2 w-full border border-gray-300 rounded-lg py-2 hover:bg-gray-100 transition"
             >
-              <span className="text-lg text-red-500 font-bold">G</span>
-              <span className="text-gray-700 font-medium">
-                Sign in with Google
-              </span>
-            </button>
-
-            {/* Login Button */}
-            <button
-              type="submit"
-              className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 font-semibold transition"
-            >
-              Login
+              <span className="text-red-500 text-xl font-bold">G</span>
+              <span className="text-gray-700">Sign in with Google</span>
             </button>
           </form>
+        </div>
+
+        {/* RIGHT - Gradient Welcome */}
+        <div className="hidden md:flex w-1/2 bg-gradient-to-b from-[#8B0000] via-[#600000] to-[#3E0703] text-white flex-col items-center justify-center p-10">
+          <h2 className="text-4xl font-bold mb-2">Hello!</h2>
+          <p className="mb-6 text-lg">Don’t have an account yet?</p>
+          <Link to="/register">
+            <button className="border-2 border-white rounded-full px-6 py-2 hover:bg-white hover:text-[#3E0703] transition-all">
+              Sign Up
+            </button>
+          </Link>
         </div>
       </div>
     </div>
