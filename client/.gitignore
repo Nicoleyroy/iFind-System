@@ -1,3 +1,10 @@
+# Ignore local env files in client
+.env
+.env.local
+
+# Vite cache / build
+.vite
+dist/
 # Logs
 logs
 *.log
@@ -22,3 +29,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+env
+.env

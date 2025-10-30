@@ -21,19 +21,25 @@ const Register = () => {
       alert("Passwords do not match!");
       return;
     }
+    // Combine first and last name to match backend
+    const payload = {
+      name: formData.firstName + " " + formData.lastName, // or use template strings
+      email: formData.email,
+      password: formData.password,
+    };
 
     try {
-      const response = await fetch("http://localhost:5000/register", {
+      const response = await fetch("http://localhost:4000/user", { // <-- ensure port matches backend
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
       const data = await response.json();
       if (response.ok) {
         alert("Registration successful!");
         navigate("/login");
       } else {
-        alert(data.error || "Registration failed");
+        alert(data.message || "Registration failed");
       }
     } catch (err) {
       console.error(err);
@@ -60,7 +66,6 @@ const Register = () => {
           <h1 className="text-3xl font-bold text-gray-800 mb-6">
             Create your account
           </h1>
-
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="flex gap-3">
               <input
@@ -68,6 +73,7 @@ const Register = () => {
                 name="firstName"
                 placeholder="First Name"
                 onChange={handleChange}
+                required
                 className="w-1/2 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
               />
               <input
@@ -75,31 +81,32 @@ const Register = () => {
                 name="lastName"
                 placeholder="Last Name"
                 onChange={handleChange}
+                required
                 className="w-1/2 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
               />
             </div>
-
             <input
               type="email"
               name="email"
               placeholder="Email"
               onChange={handleChange}
+              required
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
             />
-
             <input
               type="password"
               name="password"
               placeholder="Password"
               onChange={handleChange}
+              required
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
             />
-
             <input
               type="password"
               name="confirmPassword"
               placeholder="Confirm Password"
               onChange={handleChange}
+              required
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
             />
 
@@ -116,15 +123,12 @@ const Register = () => {
               <span className="text-red-500 text-xl font-bold">G</span>
               <span className="text-gray-700">Sign up with Google</span>
             </button>
-          <Link to="/login">
-             <button
+            <button
               type="submit"
               className="w-full bg-[#8B0000] text-white rounded-lg py-2 font-semibold hover:bg-[#600000] transition"
             >
               Create account
             </button>
-          </Link>
-           
           </form>
         </div>
       </div>
