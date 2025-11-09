@@ -1,21 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
+import api from "./api/axios";
 
 function App() {
   const [backendData, setBackendData] = useState([{}]);
 
   useEffect(() => {
-    fetch("/api")
-      .then((response) => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const contentType = response.headers.get("content-type") || "";
-        if (contentType.includes("application/json")) return response.json();
-        throw new Error("Expected JSON response from /api");
-      })
-      .then((data) => {
-        setBackendData(data);
-      })
-      .catch((err) => console.warn("Failed to fetch /api:", err));
+
+    const fetchData = async () => {
+      const res =await api.get("/api");
+      setBackendData(res.data);
+      
+    }
+    fetchData();
+    
   }, []);
 
   return (
