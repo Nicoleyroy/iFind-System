@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Navbar from "../Navbar";
+import Navbar from "../layout/navbar";
+import { API_ENDPOINTS } from '../../utils/constants';
 
 const LostItemManagement = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('Lost');
   const [items, setItems] = useState([]); // Empty array, ready for backend data
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch('http://localhost:4000/items?type=lost');
+        // Fetch only lost items
+        const res = await fetch(`${API_ENDPOINTS.ITEMS}?type=lost`);
         const json = await res.json();
         setItems(Array.isArray(json.data) ? json.data : []);
       } catch (e) {
@@ -20,18 +21,13 @@ const LostItemManagement = () => {
     load();
   }, []);
 
-  // Filter items based on search and filter
+  // Filter items based on search
   const filtered = items.filter(item => {
     const matchesSearch = item.name?.toLowerCase().includes(search.toLowerCase()) ||
                          item.description?.toLowerCase().includes(search.toLowerCase()) ||
                          item.location?.toLowerCase().includes(search.toLowerCase());
     
-    const matchesFilter = 
-      filter === 'Found' ? item.type === 'found' : 
-      filter === 'Lost' ? item.type === 'lost' : 
-      true;
-    
-    return matchesSearch && matchesFilter;
+    return matchesSearch;
   });
 
   const handleClaim = (itemId) => {
@@ -46,7 +42,7 @@ const LostItemManagement = () => {
         {/* Header Section */}
         <header className="max-w-7xl mx-auto mb-8">
   <h1 className="text-[#134252] text-3xl font-semibold mb-6">
-    Found Items
+    Lost Items
   </h1>
   
   <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
@@ -74,7 +70,7 @@ const LostItemManagement = () => {
                    bg-white text-[#134252] placeholder-[#626C71]/60 text-sm
                    focus:outline-none focus:ring-2 focus:ring-[#21808D] focus:border-transparent
                    transition-all shadow-sm"
-          placeholder="Search found items..."
+          placeholder="Search lost items..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -84,32 +80,20 @@ const LostItemManagement = () => {
     {/* Filter Buttons */}
     <div className="flex gap-2">
       <button
-        onClick={() => setFilter('Your Posts')}
-        className={`w-40 px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
-          filter === 'Your Posts'
-            ? 'bg-[#C0152F] text-[#FFF3E2] shadow-sm'
-            : 'bg-[#8C1007]/10 text-[#134252] hover:bg-[#8C1007]/10 border border-[#8C1007]/10'
-        }`}
+        onClick={() => navigate('/your-posts')}
+        className="w-40 px-4 py-2.5 rounded-lg font-medium text-sm transition-all bg-[#8C1007]/10 text-[#134252] hover:bg-[#8C1007]/20 border border-[#8C1007]/10"
       >
         Your Posts
       </button>
       <button
-        onClick={() => navigate('/lost')}
-        className={`w-40 px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
-          filter === 'Lost'
-            ? 'bg-[#C0152F] text-white shadow-sm'
-            : 'bg-[#8C1007]/10 text-[#134252] hover:bg-[#8C1007]/10 border border-[#8C1007]/10'
-        }`}
+        onClick={() => navigate('/found')}
+        className="w-40 px-4 py-2.5 rounded-lg font-medium text-sm transition-all bg-[#8C1007]/10 text-[#134252] hover:bg-[#8C1007]/20 border border-[#8C1007]/10"
       >
         Found
       </button>
       <button
-        onClick={() => navigate('/found')}
-        className={`w-40 px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
-          filter === 'Found'
-            ? 'bg-[#C0152F] text-[#FFF3E2] shadow-sm'
-            : 'bg-[#8C1007]/10 text-[#134252] hover:bg-[#8C1007]/10 border border-[#8C1007]/10'
-        }`}
+        onClick={() => navigate('/lost')}
+        className="w-40 px-4 py-2.5 rounded-lg font-medium text-sm transition-all bg-[#C0152F] text-white shadow-sm"
       >
         Lost
       </button>

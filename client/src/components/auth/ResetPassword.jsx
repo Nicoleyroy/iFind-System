@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-function ResetPassword({ onClose = () => {} }) {
+function ResetPassword() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
@@ -81,8 +80,5 @@ function ResetPassword({ onClose = () => {} }) {
   );
 }
 
-ResetPassword.propTypes = {
-  onClose: PropTypes.func,
-};
-
 export default ResetPassword;
+

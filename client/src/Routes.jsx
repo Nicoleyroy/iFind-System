@@ -1,13 +1,15 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Login from "./components/login";
-import Register from "./components/register";
-import ForgotPassword from "./components/ForgotPassword";
-import EnterCode from "./components/EnterCode";
-import ResetPassword from "./components/ResetPassword";
+import Login from "./components/auth/login";
+import Register from "./components/auth/register";
+import ForgotPassword from "./components/auth/ForgotPassword";
+import EnterCode from "./components/auth/EnterCode";
+import ResetPassword from "./components/auth/ResetPassword";
 import App from "./App";
 import LostItemManagement from "./components/user/Lost-Item-Management";
 import FoundItems from "./components/user/Found-Item";
 import ReportItem from "./components/user/Report-Item";
+import YourPosts from "./components/user/Your-Post";
+import Settings from "./components/user/Settings";
 
 function Routes() {
   const routes = createBrowserRouter([
@@ -16,17 +18,19 @@ function Routes() {
       element: <App />,
       children: [
         { index: true, element: <Login /> },
-  { path: "dashboard", element: <LostItemManagement /> },
-  { path: "lost", element: <FoundItems /> },
-  { path: "found", element: <LostItemManagement /> },
-  { path: "report", element: <ReportItem /> },
-  { path: "register", element: <Register /> },
-  { path: "forgot", element: <ForgotPassword /> },
-  { path: "verify", element: <EnterCode /> },
-  { path: "reset", element: <ResetPassword /> },
+        { path: "dashboard", element: <LostItemManagement /> },
+        { path: "lost", element: <LostItemManagement /> },
+        { path: "found", element: <FoundItems /> },
+        { path: "report", element: <ReportItem /> },
+        { path: "your-posts", element: <YourPosts /> },
+        { path: "settings", element: <Settings /> },
+        { path: "register", element: <Register /> },
+        { path: "login", element: <Login /> },
+        { path: "forgot", element: <ForgotPassword /> },
+        { path: "verify", element: <EnterCode /> },
+        { path: "reset", element: <ResetPassword /> },
       ],
     },
-    { path: "/login", element: <Login /> },
   ]);
 
   return <RouterProvider router={routes} />;

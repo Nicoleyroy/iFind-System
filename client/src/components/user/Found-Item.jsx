@@ -1,18 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Navbar from "../Navbar";
+import Navbar from "../layout/navbar";
+import { API_ENDPOINTS } from '../../utils/constants';
 
 const FoundItems = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  // Default to 'All' so reported (lost) items can also appear on this page
-  const [filter, setFilter] = useState('All');
   const [items, setItems] = useState([]); // Empty array, ready for backend data
   useEffect(() => {
     const load = async () => {
       try {
-  // fetch all items so this view can include reported (lost) items as requested
-  const res = await fetch('http://localhost:4000/items');
+        // Fetch only found items
+        const res = await fetch(`${API_ENDPOINTS.ITEMS}?type=found`);
         const json = await res.json();
         setItems(Array.isArray(json.data) ? json.data : []);
       } catch (e) {
@@ -22,18 +21,13 @@ const FoundItems = () => {
     load();
   }, []);
 
-  // Filter items based on search and filter
+  // Filter items based on search
   const filtered = items.filter(item => {
     const matchesSearch = item.name?.toLowerCase().includes(search.toLowerCase()) ||
                          item.description?.toLowerCase().includes(search.toLowerCase()) ||
                          item.location?.toLowerCase().includes(search.toLowerCase());
     
-    const matchesFilter = 
-      filter === 'Lost' ? item.type === 'lost' : 
-      filter === 'Found' ? item.type === 'found' : 
-      true;
-    
-    return matchesSearch && matchesFilter;
+    return matchesSearch;
   });
 
   const handleClaim = (itemId) => {
@@ -48,7 +42,7 @@ const FoundItems = () => {
         {/* Header Section */}
         <header className="max-w-7xl mx-auto mb-8">
   <h1 className="text-[#134252] text-3xl font-semibold mb-6">
-    Lost Items
+    Found Items
   </h1>
   
   <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
@@ -76,7 +70,7 @@ const FoundItems = () => {
                    bg-white text-[#134252] placeholder-[#626C71]/60 text-sm
                    focus:outline-none focus:ring-2 focus:ring-[#21808D] focus:border-transparent
                    transition-all shadow-sm"
-          placeholder="Search lost items..."
+          placeholder="Search found items..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -86,32 +80,20 @@ const FoundItems = () => {
     {/* Filter Buttons */}
       <div className="flex gap-2">
       <button
-        onClick={() => setFilter('Your Posts')}
-        className={`w-40 px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
-          filter === 'Your Posts'
-            ? 'bg-[#C0152F] text-[#FFF3E2] shadow-sm'
-            : 'bg-[#8C1007]/10 text-[#134252] hover:bg-[#8C1007]/10 border border-[#8C1007]/10'
-        }`}
+        onClick={() => navigate('/your-posts')}
+        className="w-40 px-4 py-2.5 rounded-lg font-medium text-sm transition-all bg-[#8C1007]/10 text-[#134252] hover:bg-[#8C1007]/20 border border-[#8C1007]/10"
       >
         Your Posts
       </button>
       <button
-        onClick={() => setFilter('Lost')}
-        className={`w-40 px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
-          filter === 'Lost'
-            ? 'bg-[#C0152F] text-white shadow-sm'
-            : 'bg-[#8C1007]/10 text-[#134252] hover:bg-[#8C1007]/10 border border-[#8C1007]/10'
-        }`}
+        onClick={() => navigate('/found')}
+        className="w-40 px-4 py-2.5 rounded-lg font-medium text-sm transition-all bg-[#C0152F] text-white shadow-sm"
       >
         Found
       </button>
       <button
-        onClick={() => setFilter('Found')}
-        className={`w-40 px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
-          filter === 'Found'
-            ? 'bg-[#C0152F] text-[#FFF3E2] shadow-sm'
-            : 'bg-[#8C1007]/10 text-[#134252] hover:bg-[#8C1007]/10 border border-[#8C1007]/10'
-        }`}
+        onClick={() => navigate('/lost')}
+        className="w-40 px-4 py-2.5 rounded-lg font-medium text-sm transition-all bg-[#8C1007]/10 text-[#134252] hover:bg-[#8C1007]/20 border border-[#8C1007]/10"
       >
         Lost
       </button>

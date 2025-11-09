@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
+import { API_ENDPOINTS, RECAPTCHA_SITE_KEY } from "../../utils/constants";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -46,13 +47,17 @@ const Login = () => {
                     if (resp?.code) {
                       // send the authorization code to the backend for token exchange
                       try {
-                        const res = await fetch("http://localhost:4000/auth/google/code", {
+                        const res = await fetch(API_ENDPOINTS.GOOGLE_CODE, {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({ code: resp.code }),
                         });
                         const data = await res.json();
                         if (res.ok) {
+                          // Save user data to localStorage if provided
+                          if (data.user) {
+                            localStorage.setItem('user', JSON.stringify(data.user));
+                          }
                           navigate("/dashboard");
                         } else {
                           setError(data.error || "Google code exchange failed");
@@ -96,7 +101,7 @@ const Login = () => {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:4000/login", {
+      const response = await fetch(API_ENDPOINTS.LOGIN, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -105,10 +110,14 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
+        // Save user data to localStorage
+        if (data.user) {
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
         // successful login — navigate to dashboard without showing an alert
         navigate("/dashboard");
       } else {
-        setError(data.error || "Login failed");
+        setError(data.message || data.error || "Login failed");
       }
     } catch (err) {
       console.error(err);
@@ -125,7 +134,7 @@ const Login = () => {
 
     try {
       // send credential (JWT) to your backend for verification and sign-in
-      const res = await fetch("http://localhost:4000/auth/google", {
+      const res = await fetch(API_ENDPOINTS.GOOGLE_AUTH, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ credential: response.credential }),
@@ -133,6 +142,10 @@ const Login = () => {
 
       const data = await res.json();
       if (res.ok) {
+        // Save user data to localStorage if provided
+        if (data.user) {
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
         // backend should return user/session info or token
         navigate("/dashboard");
       } else {
@@ -227,7 +240,7 @@ const Login = () => {
             {/* ✅ reCAPTCHA */}
             <div className="flex justify-center my-4">
               <ReCAPTCHA
-                sitekey="6LepYPArAAAAAFkkMgW82_pHWpvGRiKXa3ZSTBqT"
+                sitekey={RECAPTCHA_SITE_KEY}
                 onChange={handleCaptchaChange}
               />
             </div>
@@ -273,7 +286,7 @@ const Login = () => {
         {/* RIGHT - Gradient Welcome */}
         <div className="hidden md:flex w-1/2 bg-gradient-to-b from-[#8B0000] via-[#600000] to-[#3E0703] text-white flex-col items-center justify-center p-10">
           <h2 className="text-4xl font-bold mb-2">Hello!</h2>
-          <p className="mb-6 text-lg">Don’t have an account yet?</p>
+          <p className="mb-6 text-lg">Don't have an account yet?</p>
           <Link to="/register">
             <button className="border-2 border-white rounded-full px-6 py-2 hover:bg-white hover:text-[#3E0703] transition-all">
               Sign Up
@@ -286,3 +299,4 @@ const Login = () => {
 };
 
 export default Login;
+

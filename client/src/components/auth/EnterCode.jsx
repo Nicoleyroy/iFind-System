@@ -1,32 +1,31 @@
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
-function ForgotPassword({ onClose = () => {} }) {
-  const [email, setEmail] = useState('');
+function EnterCode() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [code, setCode] = useState(location?.state?.devCode || '');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const email = location?.state?.email || '';
 
-  const handleSend = async () => {
+  const handleVerify = async () => {
     setError('');
-    if (!email) return setError('Please enter your email');
+    if (!email) return setError('Missing email context');
+    if (!code) return setError('Enter the code you received');
     setLoading(true);
     try {
-      const res = await fetch('/api/forgot', {
+      const res = await fetch('/api/verify-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, code }),
       });
       const data = await res.json();
       if (res.ok) {
-        // if backend returned a devCode (no SMTP configured), pass it along so EnterCode can prefill
-        const devCode = data?.devCode;
-        // navigate to verify and pass email (and devCode when present)
-        const state = devCode ? { email, devCode } : { email };
-        navigate('/verify', { state });
+        // proceed to reset password and pass email+code
+        navigate('/reset', { state: { email, code } });
       } else {
-        setError(data.error || 'Unable to send code');
+        setError(data.error || 'Invalid code');
       }
     } catch (err) {
       console.error(err);
@@ -46,26 +45,24 @@ function ForgotPassword({ onClose = () => {} }) {
         }}
       >
         <div className="text-4xl font-extrabold tracking-wide mb-1">iFind</div>
-        <div className="text-xl font-extrabold mb-1">Forgot your Password?</div>
-        <div className="text-lg mb-4 text-[#ffe0c5]">Enter your Email Address</div>
+        <div className="text-xl font-extrabold mb-1">Code Sent!</div>
+        <div className="text-lg mb-4 text-[#ffe0c5]">Enter code sent to your email address</div>
 
         <input
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          type="email"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
           className="w-full bg-white text-[#430d08] rounded-md px-4 py-3 text-base mb-4"
-          placeholder="e.g. username@ifind.com"
+          type="text"
+          placeholder="e.g. 253342"
         />
-
         {error && <div className="text-red-200 mb-2 w-full">{error}</div>}
-
         <button
           type="button"
-          onClick={handleSend}
+          onClick={handleVerify}
           className="w-full bg-[#fff3e2] text-[#7e2217] rounded-md py-3 font-bold mb-4 disabled:opacity-60"
           disabled={loading}
         >
-          {loading ? 'Sending...' : 'Send Code'}
+          {loading ? 'Verifying...' : 'Enter Code'}
         </button>
 
         <button
@@ -80,8 +77,5 @@ function ForgotPassword({ onClose = () => {} }) {
   );
 }
 
-ForgotPassword.propTypes = {
-  onClose: PropTypes.func,
-};
+export default EnterCode;
 
-export default ForgotPassword;

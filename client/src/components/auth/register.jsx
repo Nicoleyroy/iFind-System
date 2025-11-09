@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { API_ENDPOINTS } from "../../utils/constants";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -10,6 +11,8 @@ const Register = () => {
     password: "",
     confirmPassword: "",
   });
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -17,33 +20,40 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setSuccess(false);
+    
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+      setError("Passwords do not match!");
       return;
     }
+    
     // Combine first and last name to match backend
     const payload = {
-      name: formData.firstName + " " + formData.lastName, // or use template strings
+      name: `${formData.firstName} ${formData.lastName}`,
       email: formData.email,
       password: formData.password,
     };
 
     try {
-      const response = await fetch("http://localhost:4000/user", { // <-- ensure port matches backend
+      const response = await fetch(API_ENDPOINTS.REGISTER, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const data = await response.json();
       if (response.ok) {
-        alert("Registration successful!");
-        navigate("/login");
+        setSuccess(true);
+        // Show success message for 2 seconds before redirecting
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
       } else {
-        alert(data.message || "Registration failed");
+        setError(data.message || data.error || "Registration failed");
       }
     } catch (err) {
       console.error(err);
-      alert("Error connecting to server");
+      setError("Error connecting to server. Please try again.");
     }
   };
 
@@ -110,6 +120,23 @@ const Register = () => {
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
             />
 
+            {success && (
+              <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-4">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <div>
+                    <p className="font-semibold">Account created successfully!</p>
+                    <p className="text-sm">Redirecting to login page...</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            {error && (
+              <div className="text-red-600 text-sm mb-2">{error}</div>
+            )}
+
             <div className="flex items-center justify-center text-gray-400 text-sm my-2">
               <span className="border-t border-gray-300 w-20"></span>
               <span className="mx-3">or</span>
@@ -117,17 +144,13 @@ const Register = () => {
             </div>
 
             <button
-              type="button"
-              className="flex items-center justify-center gap-2 w-full border border-gray-300 rounded-lg py-2 hover:bg-gray-100 transition"
-            >
-              <span className="text-red-500 text-xl font-bold">G</span>
-              <span className="text-gray-700">Sign up with Google</span>
-            </button>
-            <button
               type="submit"
-              className="w-full bg-[#8B0000] text-white rounded-lg py-2 font-semibold hover:bg-[#600000] transition"
+              disabled={success}
+              className={`w-full bg-[#8B0000] text-white rounded-lg py-2 font-semibold hover:bg-[#600000] transition ${
+                success ? 'opacity-60 cursor-not-allowed' : ''
+              }`}
             >
-              Create account
+              {success ? 'Account Created!' : 'Create account'}
             </button>
           </form>
         </div>
@@ -137,3 +160,4 @@ const Register = () => {
 };
 
 export default Register;
+

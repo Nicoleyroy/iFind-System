@@ -61,12 +61,34 @@ const resetCodes = new Map();
 app.post('/user', async (req,res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
-    return res.status(400).json({ message: 'body input is invalid' })
+    return res.status(400).json({ message: 'Name, email, and password are required' })
   }
+  
+  // Validate password length
+  if (password.length < 6) {
+    return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+  }
+  
   try {
+    // Check if user already exists
+    const existingUser = await UserModel.findOne({ email: email.toLowerCase().trim() });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email already registered' });
+    }
+    
     const user = await UserModel.create({ name, email, password });
-    res.json({ data: user, message: 'User created' })
+    res.json({ data: user, message: 'User created successfully' })
   } catch(err) {
+    // Handle MongoDB duplicate key error
+    if (err.code === 11000) {
+      return res.status(400).json({ message: 'Email already registered' });
+    }
+    // Handle validation errors
+    if (err.name === 'ValidationError') {
+      const errors = Object.values(err.errors).map(e => e.message).join(', ');
+      return res.status(400).json({ message: errors });
+    }
+    console.error('Registration error:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 })
@@ -75,7 +97,7 @@ app.post('/user', async (req,res) => {
 // Create item (lost or found)
 app.post('/items', async (req, res) => {
   try {
-    const { name, location, date, contactInfo, description, type, imageUrl } = req.body || {};
+    const { name, location, date, contactInfo, description, type, imageUrl, userId } = req.body || {};
     if (!name || !type || !['lost', 'found'].includes(type)) {
       return res.status(400).json({ message: 'Missing or invalid fields' });
     }
@@ -92,6 +114,7 @@ app.post('/items', async (req, res) => {
       description,
       type,
       imageUrl,
+      userId: userId || null,
     });
     return res.json({ data: item });
   } catch (err) {
@@ -114,6 +137,59 @@ app.get('/items', async (req, res) => {
   }
 });
 
+// Update item
+app.put('/items/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, location, date, contactInfo, description, type, imageUrl, status } = req.body || {};
+    
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (location !== undefined) updateData.location = location;
+    if (date !== undefined) {
+      const d = new Date(date);
+      if (!isNaN(d.getTime())) updateData.date = d;
+    }
+    if (contactInfo !== undefined) updateData.contactInfo = contactInfo;
+    if (description !== undefined) updateData.description = description;
+    if (type !== undefined && ['lost', 'found'].includes(type)) updateData.type = type;
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+    if (status !== undefined && ['Unclaimed', 'Pending', 'Claimed'].includes(status)) updateData.status = status;
+    
+    const item = await ItemModel.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+    
+    if (!item) {
+      return res.status(404).json({ message: 'Item not found' });
+    }
+    
+    return res.json({ data: item });
+  } catch (err) {
+    console.error('PUT /items/:id failed', err);
+    return res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Delete item
+app.delete('/items/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const item = await ItemModel.findByIdAndDelete(id);
+    
+    if (!item) {
+      return res.status(404).json({ message: 'Item not found' });
+    }
+    
+    return res.json({ message: 'Item deleted successfully', data: item });
+  } catch (err) {
+    console.error('DELETE /items/:id failed', err);
+    return res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -127,6 +203,93 @@ app.post('/login', async (req, res) => {
     res.json({ message: 'Login successful', user });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Get user by ID
+app.get('/user/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await UserModel.findById(id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    return res.json({ data: user });
+  } catch (err) {
+    console.error('GET /user/:id failed', err);
+    return res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Update user profile (name, phoneNumber, profilePicture)
+app.put('/user/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, phoneNumber, profilePicture } = req.body || {};
+    
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber;
+    if (profilePicture !== undefined) updateData.profilePicture = profilePicture;
+    
+    const user = await UserModel.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: true }
+    ).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    return res.json({ data: user, message: 'Profile updated successfully' });
+  } catch (err) {
+    // Handle MongoDB duplicate key error
+    if (err.code === 11000) {
+      return res.status(400).json({ message: 'Email already registered' });
+    }
+    // Handle validation errors
+    if (err.name === 'ValidationError') {
+      const errors = Object.values(err.errors).map(e => e.message).join(', ');
+      return res.status(400).json({ message: errors });
+    }
+    console.error('PUT /user/:id failed', err);
+    return res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Change user password
+app.put('/user/:id/password', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { currentPassword, newPassword } = req.body || {};
+    
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current password and new password are required' });
+    }
+    
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters long' });
+    }
+    
+    const user = await UserModel.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Verify current password
+    if (user.password !== currentPassword) {
+      return res.status(401).json({ message: 'Current password is incorrect' });
+    }
+    
+    // Update password
+    user.password = newPassword;
+    await user.save();
+    
+    return res.json({ message: 'Password changed successfully' });
+  } catch (err) {
+    console.error('PUT /user/:id/password failed', err);
+    return res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
