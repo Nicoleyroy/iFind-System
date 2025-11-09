@@ -24,7 +24,7 @@ const server = http.createServer(app);
 // ✅ Create Socket.IO instance
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: "http://localhost:5173",
     methods: ["GET", "POST", "PUT", "DELETE"]
   }
 });
@@ -34,8 +34,14 @@ const UserModel = require('./src/models/user');
 const ItemModel = require('./src/models/item');
 connectToDB();
 
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}));
+
 app.use(express.json({ extended: true }));
+
+
 
 // ===== SOCKET.IO CONNECTION =====
 io.on("connection", (socket) => {
@@ -184,6 +190,17 @@ app.delete('/users/:id', async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
+
+app.put('/items/:id/resolve', async (req, res) => {
+  try {
+    const item = await ItemModel.findByIdAndUpdate(req.params.id, { status: "Resolved" }, { new: true });
+    if (!item) return res.status(404).json({ message: "Item not found" });
+    res.json({ message: "Item marked as resolved", data: item });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 
 // ==========================================================
 

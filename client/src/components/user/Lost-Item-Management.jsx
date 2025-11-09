@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from "../Navbar";
+import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
+
 
 const LostItemManagement = () => {
   const navigate = useNavigate();

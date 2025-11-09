@@ -11,7 +11,7 @@ const Login = () => {
   const codeClientRef = useRef(null);
 
   // Google client id - set this in client/.env as VITE_GOOGLE_CLIENT_ID
-  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "511822923019-k6tkimq73a1cb17c70pj1eortrcqkm2u.apps.googleusercontent.com";
 
   useEffect(() => {
     // dynamically load the Google Identity Services script if it's not present
