@@ -261,7 +261,7 @@ const Login = () => {
 
             <button
               type="submit"
-              className="w-full bg-[#8B0000] text-white rounded-lg py-2 font-semibold hover:bg-[#600000] transition"
+              className="w-full bg-[#8B0000] text-white rounded-lg py-2 font-semibold hover:bg-[#F5515F] transition"
             >
               Log in
             </button>
@@ -284,7 +284,7 @@ const Login = () => {
         </div>
 
         {/* RIGHT - Gradient Welcome */}
-        <div className="hidden md:flex w-1/2 bg-gradient-to-b from-[#8B0000] via-[#600000] to-[#3E0703] text-white flex-col items-center justify-center p-10">
+        <div className="hidden md:flex w-1/2 bg-gradient-to-b from-[#F5515F] via-[#A1051D] to-[#3E0703] text-white flex-col items-center justify-center p-10">
           <h2 className="text-4xl font-bold mb-2">Hello!</h2>
           <p className="mb-6 text-lg">Don't have an account yet?</p>
           <Link to="/register">

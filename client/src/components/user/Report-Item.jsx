@@ -45,12 +45,13 @@ function ReportItem() {
         date: dateInfo,
         contactInfo,
         description,
-        type: itemType,
         imageUrl,
         userId,
       };
 
-      const res = await fetch(API_ENDPOINTS.ITEMS, {
+      const endpoint = itemType === 'lost' ? API_ENDPOINTS.LOST_ITEMS : API_ENDPOINTS.FOUND_ITEMS;
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

@@ -18,8 +18,18 @@ const UserSchema = new Schema({
   },
   password: {
     type: String,
-    required: [true, 'Password is required'],
+    // Make password optional for Google-authenticated users
     minlength: [6, 'Password must be at least 6 characters long'],
+    // Only require password if user doesn't have Google ID
+    required: function() {
+      return !this.googleId;
+    },
+  },
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true, // Allows multiple null values
+    trim: true,
   },
   phoneNumber: {
     type: String,

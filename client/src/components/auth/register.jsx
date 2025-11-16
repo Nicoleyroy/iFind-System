@@ -61,7 +61,7 @@ const Register = () => {
     <div className="flex min-h-screen bg-gray-100 items-center justify-center p-4">
       <div className="flex w-full max-w-5xl bg-white shadow-2xl rounded-3xl overflow-hidden">
         {/* LEFT - Gradient Welcome */}
-        <div className="hidden md:flex w-1/2 bg-gradient-to-b from-[#8B0000] via-[#600000] to-[#3E0703] text-white flex-col items-center justify-center p-10 ">
+        <div className="hidden md:flex w-1/2 bg-linear-to-b from-[#8B0000] via-[#600000] to-[#3E0703] text-white flex-col items-center justify-center p-10 ">
           <h2 className="text-4xl font-bold mb-2">Welcome Back!</h2>
           <p className="mb-6 text-lg">Already have an account?</p>
           <Link to="/login">

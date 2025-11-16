@@ -1,8 +1,145 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Navbar from "../layout/navbar";
-import { API_ENDPOINTS } from '../../utils/constants';
-import { uploadToCloudinary } from '../../utils/cloudinary';
+import Navbar from "../../layout/navbar";
+import { API_ENDPOINTS } from '../../../utils/constants';
+import { uploadToCloudinary } from '../../../utils/cloudinary';
+
+// Password Change Form Component
+function PasswordChangeForm({ userId, isGoogleAccount, onSuccess, onError }) {
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [loading, setLoading] = useState(false);
+  const [localError, setLocalError] = useState('');
+
+  const handleChange = (e) => {
+    setPasswordData({
+      ...passwordData,
+      [e.target.name]: e.target.value,
+    });
+    setLocalError('');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLocalError('');
+    setLoading(true);
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setLocalError('New passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      setLocalError('New password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(API_ENDPOINTS.CHANGE_PASSWORD(userId), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword || null, // Allow empty for Google accounts without password
+          newPassword: passwordData.newPassword,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.message || 'Failed to change password');
+      }
+
+      // Reset form
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+      
+      onSuccess('Password changed successfully!');
+    } catch (err) {
+      const errorMsg = err.message || 'Failed to change password';
+      setLocalError(errorMsg);
+      onError(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {localError && (
+        <div className="p-3 bg-red-50 text-red-700 text-sm rounded-md">
+          {localError}
+        </div>
+      )}
+      
+      <div>
+        <label className="block text-sm font-medium text-[#134252] mb-2">
+          Current Password {isGoogleAccount && <span className="text-xs text-[#626C71] font-normal">(optional if you don't have one)</span>}
+        </label>
+        <input
+          type="password"
+          name="currentPassword"
+          value={passwordData.currentPassword}
+          onChange={handleChange}
+          required={!isGoogleAccount}
+          className="w-full rounded-md border border-[#5E5240]/20 bg-white px-3 py-2 text-sm text-[#134252] focus:outline-none focus:ring-2 focus:ring-[#21808D]"
+          placeholder={isGoogleAccount ? "Enter your current password (leave empty if you don't have one)" : "Enter your current password"}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-[#134252] mb-2">
+          New Password
+        </label>
+        <input
+          type="password"
+          name="newPassword"
+          value={passwordData.newPassword}
+          onChange={handleChange}
+          required
+          minLength={6}
+          className="w-full rounded-md border border-[#5E5240]/20 bg-white px-3 py-2 text-sm text-[#134252] focus:outline-none focus:ring-2 focus:ring-[#21808D]"
+          placeholder="Enter your new password (min. 6 characters)"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-[#134252] mb-2">
+          Confirm New Password
+        </label>
+        <input
+          type="password"
+          name="confirmPassword"
+          value={passwordData.confirmPassword}
+          onChange={handleChange}
+          required
+          minLength={6}
+          className="w-full rounded-md border border-[#5E5240]/20 bg-white px-3 py-2 text-sm text-[#134252] focus:outline-none focus:ring-2 focus:ring-[#21808D]"
+          placeholder="Confirm your new password"
+        />
+      </div>
+
+      <div className="flex justify-end pt-2">
+        <button
+          type="submit"
+          disabled={loading}
+          className={`bg-[#C0152F] text-white hover:bg-[#A01327] active:bg-[#8B1122] shadow-sm hover:shadow px-6 py-2 rounded-md text-sm font-medium transition-colors ${
+            loading ? 'opacity-60 cursor-not-allowed' : ''
+          }`}
+        >
+          {loading ? 'Changing...' : 'Change Password'}
+        </button>
+      </div>
+    </form>
+  );
+}
 
 function Settings() {
   const navigate = useNavigate();
@@ -64,8 +201,12 @@ function Settings() {
     setUploading(true);
 
     try {
-      if (!user || !user._id) {
-        throw new Error('User not found');
+      // Get user ID - check both _id and id fields
+      const userId = user?._id || user?.id;
+
+      if (!user || !userId) {
+        console.error('User object:', user);
+        throw new Error('User not found. Please log in again.');
       }
 
       let profilePictureUrl = profilePicture;
@@ -85,7 +226,7 @@ function Settings() {
         profilePicture: profilePictureUrl,
       };
 
-      const res = await fetch(API_ENDPOINTS.USER_BY_ID(user._id || user.id), {
+      const res = await fetch(API_ENDPOINTS.USER_BY_ID(userId), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -299,8 +440,60 @@ function Settings() {
 
               {activeSection === 'account' && (
                 <div className="bg-white rounded-xl border border-[#5E5240]/10 p-6">
-                  <h2 className="text-[#134252] text-2xl font-semibold mb-6">Account Settings</h2>
-                  <p className="text-[#626C71] text-sm">Account management options coming soon...</p>
+                  <h2 className="text-[#134252] text-2xl font-semibold mb-6">Account Management</h2>
+                  
+                  {/* Account Information */}
+                  <div className="mb-8">
+                    <h3 className="text-[#134252] text-lg font-semibold mb-4">Account Information</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between py-3 border-b border-[#5E5240]/10">
+                        <span className="text-[#626C71] text-sm">Email Address</span>
+                        <span className="text-[#134252] text-sm font-medium">{user?.email || 'N/A'}</span>
+                      </div>
+                      <div className="flex items-center justify-between py-3 border-b border-[#5E5240]/10">
+                        <span className="text-[#626C71] text-sm">Account Type</span>
+                        <span className="text-[#134252] text-sm font-medium">
+                          {user?.googleId ? 'Google Account' : 'Email Account'}
+                        </span>
+                      </div>
+                      {user?.createdAt && (
+                        <div className="flex items-center justify-between py-3 border-b border-[#5E5240]/10">
+                          <span className="text-[#626C71] text-sm">Member Since</span>
+                          <span className="text-[#134252] text-sm font-medium">
+                            {new Date(user.createdAt).toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'long', 
+                              day: 'numeric' 
+                            })}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Change Password Section */}
+                  <div className="mb-8">
+                    <h3 className="text-[#134252] text-lg font-semibold mb-4">Change Password</h3>
+                    {user?.googleId && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                        <p className="text-blue-800 text-sm">
+                          Your account is linked to Google. If you have set a password, you can change it here. If you don't have a password yet, leave the current password field empty and set a new password.
+                        </p>
+                      </div>
+                    )}
+                    <PasswordChangeForm 
+                      userId={user?._id || user?.id}
+                      isGoogleAccount={!!user?.googleId}
+                      onSuccess={(msg) => {
+                        setSuccess(msg || 'Password changed successfully!');
+                        setTimeout(() => setSuccess(''), 3000);
+                      }}
+                      onError={(err) => {
+                        setError(err);
+                        setTimeout(() => setError(''), 5000);
+                      }}
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -312,3 +505,4 @@ function Settings() {
 }
 
 export default Settings;
+
