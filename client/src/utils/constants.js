@@ -27,6 +27,11 @@ export const API_ENDPOINTS = {
   NOTIFICATIONS_READ_ALL: `${API_BASE_URL}/notifications/read-all`,
   AUDIT_LOGS: `${API_BASE_URL}/audit-logs`,
   AUDIT_LOGS_STATS: `${API_BASE_URL}/audit-logs/stats`,
+  BACKUP_CREATE: `${API_BASE_URL}/api/backup/create`,
+  BACKUP_HISTORY: `${API_BASE_URL}/api/backup/history`,
+  BACKUP_STATS: `${API_BASE_URL}/api/backup/stats`,
+  BACKUP_RESTORE: `${API_BASE_URL}/api/backup/restore`,
+  BACKUP_DELETE: (fileName) => `${API_BASE_URL}/api/backup/${fileName}`,
 };
 
 // reCAPTCHA Configuration

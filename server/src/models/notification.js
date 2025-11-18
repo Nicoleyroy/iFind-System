@@ -12,7 +12,7 @@ const NotificationSchema = new Schema(
     type: {
       type: String,
       enum: {
-        values: ['claim_approved', 'claim_rejected', 'item_claimed', 'new_claim_request'],
+        values: ['claim_approved', 'claim_rejected', 'item_claimed', 'new_claim_request', 'role_promotion', 'role_demotion', 'system'],
         message: 'Invalid notification type',
       },
       required: [true, 'Notification type is required'],

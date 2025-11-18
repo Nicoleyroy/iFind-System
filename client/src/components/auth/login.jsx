@@ -57,8 +57,18 @@ const Login = () => {
                           // Save user data to localStorage if provided
                           if (data.user) {
                             localStorage.setItem('user', JSON.stringify(data.user));
+                            
+                            // Navigate based on user role
+                            if (data.user.role === 'admin') {
+                              navigate("/admin/dashboard");
+                            } else if (data.user.role === 'moderator') {
+                              navigate("/moderator/dashboard");
+                            } else {
+                              navigate("/dashboard");
+                            }
+                          } else {
+                            navigate("/dashboard");
                           }
-                          navigate("/dashboard");
                         } else {
                           setError(data.error || "Google code exchange failed");
                         }
@@ -113,9 +123,18 @@ const Login = () => {
         // Save user data to localStorage
         if (data.user) {
           localStorage.setItem('user', JSON.stringify(data.user));
+          
+          // Navigate based on user role
+          if (data.user.role === 'admin') {
+            navigate("/admin/dashboard");
+          } else if (data.user.role === 'moderator') {
+            navigate("/moderator/dashboard");
+          } else {
+            navigate("/dashboard");
+          }
+        } else {
+          navigate("/dashboard");
         }
-        // successful login — navigate to dashboard without showing an alert
-        navigate("/dashboard");
       } else {
         setError(data.message || data.error || "Login failed");
       }
@@ -145,9 +164,18 @@ const Login = () => {
         // Save user data to localStorage if provided
         if (data.user) {
           localStorage.setItem('user', JSON.stringify(data.user));
+          
+          // Navigate based on user role
+          if (data.user.role === 'admin') {
+            navigate("/admin/dashboard");
+          } else if (data.user.role === 'moderator') {
+            navigate("/moderator/dashboard");
+          } else {
+            navigate("/dashboard");
+          }
+        } else {
+          navigate("/dashboard");
         }
-        // backend should return user/session info or token
-        navigate("/dashboard");
       } else {
         setError(data.error || "Google sign-in failed");
       }

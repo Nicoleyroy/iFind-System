@@ -196,9 +196,10 @@ function Navbar() {
             <div className="flex h-16 items-center justify-between">
               <div className="flex items-center">
                 <div className="shrink-0">
-                  {/* <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center shadow-md hover:shadow-lg transition-shadow">
-                    <span className="text-[#8B0000] font-bold text-lg">iFind</span>
-                  </div> */}
+                  <div className="h-10 w-10  flex items-center justify-center">
+                    <img src="/IFIND-LOGO.png" alt="iFind Logo" className="h-10 w-10 " />
+                    <span className="gap-y-2 font-bold text-lg">iFind</span>
+                  </div>
                 </div>
                 <div className="hidden md:block">
                   <div className="ml-10 flex items-baseline space-x-2">

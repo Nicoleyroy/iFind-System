@@ -26,9 +26,11 @@ export default function AdminSidebar() {
       {/* Logo/Brand Section */}
       <div className="px-6 py-8 border-b border-gray-200">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center shadow-lg">
-            <Shield className="w-9 h-9 text-white" />
-          </div>
+          <img 
+            src="/IFIND-LOGO.png" 
+            alt="iFind Logo" 
+            className="w-20 h-20 object-contain"
+          />
           <div className="flex flex-col items-center">
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">iFind</h1>
             <span className="text-xs text-orange-600 font-medium uppercase tracking-wider">Admin Panel</span>
@@ -79,7 +81,7 @@ export default function AdminSidebar() {
               </NavLink>
 
               <NavLink
-                to="/admin/users/moderators"
+                to="/admin/users/permission"
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-2 rounded-xl transition-all text-sm ${
                     isActive ? "bg-orange-500 text-white font-semibold shadow-md" : "text-gray-600 hover:bg-gray-100"
@@ -87,7 +89,7 @@ export default function AdminSidebar() {
                 }
               >
                 <UserCog className="w-4 h-4" />
-                <span>Moderators</span>
+                <span>Permission</span>
               </NavLink>
 
               <NavLink

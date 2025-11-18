@@ -13,12 +13,11 @@ export default function ModSidebar() {
     <aside className="w-64 bg-white text-gray-800 flex flex-col fixed top-0 left-0 h-full shadow-2xl border-r border-gray-200">
       {/* Logo/Brand Section */}
       <div className="px-6 py-8 border-b border-gray-200">
-        {/* Logo - replace src with your actual logo path */}
         <div className="flex flex-col items-center gap-3">
           <img 
-            src="/path/to/your/logo.png" 
+            src="/IFIND-LOGO.png" 
             alt="iFind Logo" 
-            className="w-16 h-16 rounded-lg object-cover"
+            className="w-20 h-20 object-contain"
           />
           <div className="flex flex-col items-center">
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">iFind</h1>

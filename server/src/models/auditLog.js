@@ -12,7 +12,7 @@ const AuditLogSchema = new Schema(
     action: {
       type: String,
       enum: {
-        values: ['claim_approved', 'claim_rejected', 'item_verified', 'item_deleted', 'user_banned'],
+        values: ['claim_approved', 'claim_rejected', 'item_verified', 'item_deleted', 'user_banned', 'role_changed', 'moderator_promoted', 'moderator_demoted'],
         message: 'Invalid action type',
       },
       required: [true, 'Action is required'],

@@ -56,15 +56,11 @@ const Profile = () => {
       const lostJson = await lostRes.json();
       const foundJson = await foundRes.json();
       
-      console.log('Lost items response:', lostJson);
-      console.log('Found items response:', foundJson);
-      
       const lostItems = Array.isArray(lostJson.data) ? lostJson.data.map(item => ({ ...item, type: 'lost' })) : [];
       const foundItems = Array.isArray(foundJson.data) ? foundJson.data.map(item => ({ ...item, type: 'found' })) : [];
       
       // Combine both arrays
       const allItems = [...lostItems, ...foundItems];
-      console.log('All items loaded:', allItems);
       setItems(allItems);
     } catch (e) {
       console.error('Failed to load items', e);
@@ -77,13 +73,6 @@ const Profile = () => {
     
     const currentUserId = user._id || user.id;
     const itemUserId = item.userId?._id || item.userId?.id || item.userId;
-    
-    console.log('Comparing:', {
-      currentUserId: String(currentUserId),
-      itemUserId: String(itemUserId),
-      match: String(itemUserId) === String(currentUserId),
-      item: item.name
-    });
     
     const matchesUser = String(itemUserId) === String(currentUserId);
     

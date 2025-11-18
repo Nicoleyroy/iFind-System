@@ -1,4 +1,5 @@
 const UserModel = require('../src/models/user');
+const AuditLogModel = require('../src/models/auditLog');
 
 const getAllUsers = async (req, res) => {
   try {
@@ -27,7 +28,13 @@ const getUserById = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, phoneNumber, profilePicture, accountStatus, role } = req.body || {};
+    const { name, phoneNumber, profilePicture, accountStatus, role, adminId } = req.body || {};
+    
+    // Get the user before update to check for role changes
+    const oldUser = await UserModel.findById(id);
+    if (!oldUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
     
     const updateData = {};
     if (name !== undefined) updateData.name = name;
@@ -44,6 +51,29 @@ const updateUser = async (req, res) => {
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Handle role change notifications and audit logging
+    if (role !== undefined && oldUser.role !== role) {
+      // Create audit log if adminId is provided
+      if (adminId) {
+        const oldRole = oldUser.role || 'user'; // Default to 'user' if undefined
+        const auditAction = role === 'moderator' ? 'moderator_promoted' : 
+                          (oldRole === 'moderator' ? 'moderator_demoted' : 'role_changed');
+        
+        await AuditLogModel.create({
+          moderatorId: adminId,
+          action: auditAction,
+          targetType: 'User',
+          targetId: user._id,
+          details: `Changed user role from ${oldRole} to ${role}`,
+          metadata: {
+            oldRole: oldRole,
+            newRole: role,
+            userName: user.name || user.email,
+          },
+        });
+      }
     }
     
     return res.json({ data: user, message: 'Profile updated successfully' });

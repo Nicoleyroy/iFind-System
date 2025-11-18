@@ -11,6 +11,7 @@ const claimRoutes = require('./claim.routes');
 const notificationRoutes = require('./notification.routes');
 const passwordResetRoutes = require('./password-reset.routes');
 const auditLogRoutes = require('./auditLog.routes');
+const backupRoutes = require('./backup.routes');
 
 // Health check endpoint
 router.get('/api', (req, res) => {
@@ -34,6 +35,7 @@ router.use(claimRoutes);
 router.use(notificationRoutes);
 router.use(passwordResetRoutes);
 router.use(auditLogRoutes);
+router.use(backupRoutes);
 
 module.exports = router;
 

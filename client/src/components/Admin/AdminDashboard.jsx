@@ -339,7 +339,7 @@ const AdminDashboard = () => {
             <h2 className="text-lg font-semibold text-gray-900">Recent User Activity</h2>
             <p className="text-sm text-gray-600 mt-1">Latest user registrations</p>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-96 overflow-y-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
