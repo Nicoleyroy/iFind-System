@@ -1,5 +1,7 @@
 const UserModel = require('../src/models/user');
 const AuditLogModel = require('../src/models/auditLog');
+const LostItemModel = require('../src/models/lostItem');
+const FoundItemModel = require('../src/models/foundItem');
 
 const getAllUsers = async (req, res) => {
   try {
@@ -138,7 +140,13 @@ const deleteUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    return res.json({ message: 'User deleted successfully' });
+    // Delete all lost items posted by this user
+    await LostItemModel.deleteMany({ userId: id });
+    
+    // Delete all found items posted by this user
+    await FoundItemModel.deleteMany({ userId: id });
+    
+    return res.json({ message: 'User and all associated posts deleted successfully' });
   } catch (err) {
     console.error('DELETE /user/:id failed', err);
     return res.status(500).json({ message: 'Server error', error: err.message });

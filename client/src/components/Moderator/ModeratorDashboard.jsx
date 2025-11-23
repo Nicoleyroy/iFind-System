@@ -126,7 +126,7 @@ const ModeratorDashboard = () => {
 
       <div className="flex-1 ml-64">
         {/* Compact Header with Gradient */}
-        <div className="bg-gradient-to-r from-red-700 via-red-600 to-rose-600 text-white px-8 py-5">
+        <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white px-8 py-5">
           <div className="flex items-center justify-between">
             {/* Left: Title & Notification */}
             <div className="flex items-center gap-6">
@@ -135,7 +135,7 @@ const ModeratorDashboard = () => {
                   <Bell className="w-5 h-5 text-white" />
                 </button>
                 {stats.pendingClaims > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 rounded-full flex items-center justify-center text-xs font-bold border-2 border-white">
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-600 rounded-full flex items-center justify-center text-xs font-bold border-2 border-white">
                     {stats.pendingClaims > 9 ? '9+' : stats.pendingClaims}
                   </span>
                 )}
@@ -152,7 +152,7 @@ const ModeratorDashboard = () => {
                 <p className="text-white text-sm font-semibold leading-tight">{user?.name || 'JOANNA NICOLE YROY'}</p>
                 <p className="text-white/70 text-xs">Moderator</p>
               </div>
-              <div className="w-11 h-11 bg-red-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
+              <div className="w-11 h-11 bg-orange-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
                 <span className="text-white text-lg font-bold">
                   {user?.name ? user.name.charAt(0).toUpperCase() : 'J'}
                 </span>
@@ -166,7 +166,7 @@ const ModeratorDashboard = () => {
           {loading && (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-700 mx-auto"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
                 <p className="mt-4 text-gray-600">Loading dashboard...</p>
               </div>
             </div>
@@ -182,7 +182,7 @@ const ModeratorDashboard = () => {
                   <p className="text-sm text-red-800 mt-1">{error}</p>
                   <button 
                     onClick={loadData}
-                    className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                    className="mt-3 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium"
                   >
                     Retry
                   </button>
@@ -241,7 +241,7 @@ const ModeratorDashboard = () => {
                         <div className={`p-3 rounded-lg bg-${action.color}-100`}>
                           <div className={`text-${action.color}-600`}>{action.icon}</div>
                         </div>
-                        <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-red-700 transition-colors" />
+                        <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-orange-600 transition-colors" />
                       </div>
                       <h3 className="font-semibold text-gray-900 mb-1">{action.title}</h3>
                       <p className="text-sm text-gray-600">{action.description}</p>
@@ -258,7 +258,7 @@ const ModeratorDashboard = () => {
                     <h2 className="text-lg font-bold text-gray-900">Recent Claims</h2>
                     <button
                       onClick={() => navigate('/moderator/item-verification')}
-                      className="text-sm text-red-700 hover:text-red-800 font-medium flex items-center gap-1"
+                      className="text-sm text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1"
                     >
                       View All
                       <ArrowRight className="w-4 h-4" />
@@ -366,7 +366,7 @@ const ModeratorDashboard = () => {
                       </p>
                       <button
                         onClick={() => navigate('/moderator/item-verification')}
-                        className="mt-3 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium"
+                        className="mt-3 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium"
                       >
                         Review Now
                       </button>
@@ -390,7 +390,7 @@ function StatCard({ icon, title, value, badge, bgColor, iconColor }) {
           <div className={iconColor}>{icon}</div>
         </div>
         {badge && (
-          <span className="text-xs font-semibold px-2 py-1 bg-red-100 text-red-800 rounded-full">
+          <span className="text-xs font-semibold px-2 py-1 bg-orange-100 text-orange-800 rounded-full">
             {badge}
           </span>
         )}

@@ -19,6 +19,12 @@ const ClaimRequestSchema = new Schema(
       default: '',
       trim: true,
     },
+    // Optional image URL for proof (e.g., Cloudinary secure_url)
+    imageUrl: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     status: {
       type: String,
       enum: {

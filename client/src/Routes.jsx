@@ -11,6 +11,7 @@ import FoundItems from "./components/user/Found-Item";
 import ReportItem from "./components/user/Report-Item";
 import Settings from "./components/user/management/Settings";
 import Profile from "./components/user/management/profile";
+import ClaimRequests from "./components/user/ClaimRequests";
 import ContactUs from "./components/user/ContactUs";
 
 //Moderator
@@ -19,6 +20,7 @@ import ModeratorDashboard from "./components/Moderator/ModeratorDashboard";
 import ModLostItemManagement from "./components/Moderator/ModLostItemManagement";
 import ReportsDashboard from "./components/Moderator/ReportsDashboard";
 import ClaimTicketVerification from "./components/Moderator/ClaimTicketVerification";
+import ModeratorSettings from "./components/Moderator/ModeratorSettings";
 
 //Admin
 import AdminDashboard from "./components/Admin/AdminDashboard";
@@ -63,6 +65,10 @@ function Routes() {
           path: "profile", 
           element: <ProtectedRoute allowedRoles={['user', 'moderator', 'admin']}><Profile /></ProtectedRoute> 
         },
+        {
+          path: "profile/claims",
+          element: <ProtectedRoute allowedRoles={['user', 'moderator', 'admin']}><ClaimRequests /></ProtectedRoute>
+        },
         { 
           path: "contact", 
           element: <ProtectedRoute allowedRoles={['user', 'moderator', 'admin']}><ContactUs /></ProtectedRoute> 
@@ -95,6 +101,10 @@ function Routes() {
         { 
           path: "moderator/item-verification", 
           element: <ProtectedRoute allowedRoles={['moderator', 'admin']}><ClaimTicketVerification /></ProtectedRoute> 
+        },
+        { 
+          path: "moderator/settings", 
+          element: <ProtectedRoute allowedRoles={['moderator', 'admin']}><ModeratorSettings /></ProtectedRoute> 
         },
 
         // Admin Routes - Protected for admins only

@@ -243,12 +243,12 @@ const Profile = () => {
         )}
         {error && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
+            <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg shadow-sm">
               <div className="flex items-center">
-                <svg className="w-5 h-5 text-red-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 text-orange-500 mr-3" fill="currentColor" viewBox="0 0 20 20">0">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
-                <p className="text-red-800 font-medium">{error}</p>
+                <p className="text-orange-800 font-medium">{error}</p>
               </div>
             </div>
           </div>
@@ -267,7 +267,7 @@ const Profile = () => {
                     className="w-32 h-32 lg:w-40 lg:h-40 rounded-full border-2 border-gray-200 object-cover shadow-md"
                   />
                 ) : (
-                  <div className="w-32 h-32 lg:w-40 lg:h-40 rounded-full border-2 border-gray-200 bg-gradient-to-br from-[#8B0000] to-[#C0152F] flex items-center justify-center text-white text-4xl font-bold shadow-md">
+                  <div className="w-32 h-32 lg:w-40 lg:h-40 rounded-full border-2 border-gray-200 bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-4xl font-bold shadow-md">
                     {getInitials(user.name)}
                   </div>
                 )}
@@ -282,17 +282,25 @@ const Profile = () => {
                     </h1>
                     <p className="text-sm text-gray-500 font-medium uppercase tracking-wide">Member Profile</p>
                   </div>
-                  
-                  <button
-                    onClick={() => navigate('/settings')}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#8B0000] to-[#C0152F] text-white rounded-lg text-sm font-semibold hover:from-[#A01327] hover:to-[#8B0000] transition-all duration-200 shadow-md hover:shadow-lg"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Edit Profile
-                  </button>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => navigate('/settings')}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg text-sm font-semibold hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Edit Profile
+                      </button>
+
+                      <button
+                        onClick={() => navigate('/profile/claims')}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-all duration-200 shadow-sm"
+                      >
+                        View Claim Requests
+                      </button>
+                    </div>
                 </div>
                   
                 {/* Contact Information Grid */}
@@ -300,7 +308,7 @@ const Profile = () => {
                   {user.email && (
                     <div className="flex items-center gap-3">
                       <div className="flex-shrink-0 w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                        <svg className="w-5 h-5 text-[#C0152F]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
                       </div>
@@ -313,7 +321,7 @@ const Profile = () => {
                   {user.phoneNumber && (
                     <div className="flex items-center gap-3">
                       <div className="flex-shrink-0 w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                        <svg className="w-5 h-5 text-[#C0152F]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                         </svg>
                       </div>
@@ -326,7 +334,7 @@ const Profile = () => {
                   {user.createdAt && (
                     <div className="flex items-center gap-3">
                       <div className="flex-shrink-0 w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                        <svg className="w-5 h-5 text-[#C0152F]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                       </div>
@@ -338,7 +346,7 @@ const Profile = () => {
                   )}
                   <div className="flex items-center gap-3">
                     <div className="flex-shrink-0 w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                      <svg className="w-5 h-5 text-[#C0152F]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                     </div>
@@ -370,7 +378,7 @@ const Profile = () => {
                 </div>
                 <input
                   type="text"
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#C0152F] focus:border-transparent shadow-sm"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent shadow-sm"
                   placeholder="Search posts..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -412,7 +420,7 @@ const Profile = () => {
                             className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#8B0000] to-[#C0152F] flex items-center justify-center text-white text-sm font-bold border-2 border-white shadow-sm">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-sm font-bold border-2 border-white shadow-sm">
                             {getInitials(user.name)}
                           </div>
                         )}
@@ -464,7 +472,7 @@ const Profile = () => {
                                 setDeleteConfirm(item._id || item.id);
                                 setOpenMenuId(null);
                               }}
-                              className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                              className="w-full text-left px-4 py-2.5 text-sm text-orange-600 hover:bg-orange-50 flex items-center gap-3 transition-colors"
                             >
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -514,7 +522,7 @@ const Profile = () => {
                             ? 'bg-amber-100 text-amber-800'
                             : item.status === 'Claimed'
                             ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
+                            : 'bg-orange-100 text-orange-800'
                         }`}
                       >
                         {item.status || 'Unclaimed'}
@@ -562,7 +570,7 @@ const Profile = () => {
                     required
                     value={editForm.name}
                     onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C0152F] focus:border-transparent transition-shadow"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-shadow"
                     placeholder="Enter item name"
                   />
                 </div>
@@ -573,7 +581,7 @@ const Profile = () => {
                     type="text"
                     value={editForm.location}
                     onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C0152F] focus:border-transparent transition-shadow"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-shadow"
                     placeholder="Where was it lost/found?"
                   />
                 </div>
@@ -584,7 +592,7 @@ const Profile = () => {
                     type="date"
                     value={editForm.date}
                     onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#C0152F] focus:border-transparent transition-shadow"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-shadow"
                   />
                 </div>
 
@@ -594,7 +602,7 @@ const Profile = () => {
                     type="text"
                     value={editForm.contactInfo}
                     onChange={(e) => setEditForm({ ...editForm, contactInfo: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C0152F] focus:border-transparent transition-shadow"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-shadow"
                     placeholder="Email or phone number"
                   />
                 </div>
@@ -604,7 +612,7 @@ const Profile = () => {
                   <select
                     value={editForm.type}
                     onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#C0152F] focus:border-transparent transition-shadow"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-shadow"
                   >
                     <option value="lost">Lost</option>
                     <option value="found">Found</option>
@@ -617,7 +625,7 @@ const Profile = () => {
                     rows={4}
                     value={editForm.description}
                     onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C0152F] focus:border-transparent transition-shadow resize-none"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-shadow resize-none"
                     placeholder="Provide details about the item..."
                   />
                 </div>
@@ -654,7 +662,7 @@ const Profile = () => {
                     type="file"
                     accept="image/*"
                     onChange={handleFileChange}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#C0152F] file:text-white hover:file:bg-[#A01327] focus:outline-none focus:ring-2 focus:ring-[#C0152F] focus:border-transparent transition-shadow"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-500 file:text-white hover:file:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-shadow"
                   />
                 </div>
               </div>
@@ -674,7 +682,7 @@ const Profile = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-[#8B0000] to-[#C0152F] hover:from-[#A01327] hover:to-[#8B0000] transition-all shadow-md hover:shadow-lg ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all shadow-md hover:shadow-lg ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
                   {loading ? (
                     <span className="flex items-center gap-2">
@@ -697,8 +705,8 @@ const Profile = () => {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
             <div className="p-6">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-6 h-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
               </div>
@@ -714,7 +722,7 @@ const Profile = () => {
                 <button
                   onClick={() => handleDelete(deleteConfirm)}
                   disabled={loading}
-                  className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-md hover:shadow-lg ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700 transition-colors shadow-md hover:shadow-lg ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">

@@ -16,6 +16,8 @@ export default function ClaimTicketVerification() {
   const [reviewNotes, setReviewNotes] = useState('');
   const [actionType, setActionType] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   
   // Filters
   const [activeTab, setActiveTab] = useState('Pending'); // Pending, Approved, Rejected
@@ -243,7 +245,7 @@ export default function ClaimTicketVerification() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-700 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading claims...</p>
         </div>
       </div>
@@ -256,7 +258,7 @@ export default function ClaimTicketVerification() {
       
       <div className="flex-1 ml-64">
        {/* Modern Header with Gradient */}
-               <div className="bg-gradient-to-r from-red-700 via-red-600 to-rose-600 text-white px-8 py-10">
+               <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white px-8 py-10">
                  <div className="flex items-center justify-between mb-6">
                    {/* Notification Bell */}
                    <div className="relative">
@@ -273,7 +275,7 @@ export default function ClaimTicketVerification() {
                          <p className="text-white text-sm font-semibold leading-tight">JOANNA NICOLE YROY</p>
                          <p className="text-white/70 text-xs">Moderator</p>
                        </div>
-                       <div className="w-11 h-11 bg-red-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
+                       <div className="w-11 h-11 bg-orange-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
                          <span className="text-white text-lg font-bold">J</span>
                        </div>
                      </div>
@@ -422,7 +424,7 @@ export default function ClaimTicketVerification() {
                 placeholder="Search by item name, claimant name, or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
             </div>
 
@@ -430,7 +432,7 @@ export default function ClaimTicketVerification() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white min-w-[180px]"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white min-w-[180px]"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -444,7 +446,7 @@ export default function ClaimTicketVerification() {
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="text-red-600 hover:text-red-700 font-medium"
+                className="text-orange-600 hover:text-orange-700 font-medium"
               >
                 Clear Search
               </button>
@@ -590,6 +592,22 @@ export default function ClaimTicketVerification() {
                           </div>
                         </div>
 
+                        {claim.imageUrl && (
+                          <div className="mt-4">
+                            <div className="bg-white border border-gray-200 rounded-lg p-2 max-w-md">
+                              <img
+                                src={claim.imageUrl}
+                                alt={`Claim proof - ${claim.claimantId?.name || 'claimant'}`}
+                                className="w-full h-48 object-cover rounded-md border cursor-pointer"
+                                onClick={() => {
+                                  setPreviewImageUrl(claim.imageUrl);
+                                  setIsPreviewOpen(true);
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
                         {claim.reviewNotes && (
                           <div className="mt-4">
                             <h5 className="text-sm font-medium text-gray-700 mb-2">Review Notes:</h5>
@@ -667,7 +685,7 @@ export default function ClaimTicketVerification() {
                       onClick={() => setCurrentPage(page)}
                       className={`w-10 h-10 rounded-lg font-medium transition-colors ${
                         currentPage === page
-                          ? 'bg-red-700 text-white'
+                          ? 'bg-orange-600 text-white'
                           : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
                       }`}
                     >
@@ -706,6 +724,22 @@ export default function ClaimTicketVerification() {
             </div>
 
             <div className="p-6 space-y-4">
+              {selectedClaim?.imageUrl && (
+                <div>
+                  <div className="mb-4">
+                    <img
+                      src={selectedClaim.imageUrl}
+                      alt={`Claim proof - ${selectedClaim.claimantId?.name || 'claimant'}`}
+                      className="w-full h-56 object-cover rounded-md border border-gray-200 cursor-pointer"
+                      onClick={() => {
+                        setPreviewImageUrl(selectedClaim.imageUrl);
+                        setIsPreviewOpen(true);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Review Notes {actionType === 'Rejected' ? '(Required)' : '(Optional)'}
@@ -715,7 +749,7 @@ export default function ClaimTicketVerification() {
                   onChange={(e) => setReviewNotes(e.target.value)}
                   rows={4}
                   placeholder={`Enter your ${actionType === 'Approved' ? 'approval' : 'rejection'} reason or notes...`}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
                 />
               </div>
 
@@ -771,6 +805,28 @@ export default function ClaimTicketVerification() {
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Image Preview Modal */}
+      {isPreviewOpen && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="relative max-w-5xl w-full">
+            <button
+              onClick={() => { setIsPreviewOpen(false); setPreviewImageUrl(null); }}
+              className="absolute top-3 right-3 z-50 bg-white/80 rounded-full p-2 hover:bg-white"
+              aria-label="Close image preview"
+            >
+              <svg className="w-6 h-6 text-gray-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <img
+              src={previewImageUrl}
+              alt="Preview"
+              className="w-full h-[80vh] object-contain rounded-md mx-auto"
+            />
           </div>
         </div>
       )}

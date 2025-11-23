@@ -7,7 +7,7 @@ const AuditLogModel = require('../src/models/auditLog');
 const createClaimRequest = async (req, res) => {
   try {
     const { id } = req.params;
-    const { claimantId, proofOfOwnership } = req.body || {};
+    const { claimantId, proofOfOwnership, imageUrl } = req.body || {};
     
     if (!claimantId) {
       return res.status(400).json({ message: 'Claimant ID is required' });
@@ -40,6 +40,7 @@ const createClaimRequest = async (req, res) => {
       itemId: id,
       claimantId: claimantId,
       proofOfOwnership: proofOfOwnership || '',
+      imageUrl: imageUrl || '',
       status: 'Pending',
     });
     
@@ -72,10 +73,14 @@ const createClaimRequest = async (req, res) => {
 
 const getClaims = async (req, res) => {
   try {
-    const { status } = req.query;
+    const { status, claimantId } = req.query;
     const filter = {};
     if (status && ['Pending', 'Approved', 'Rejected'].includes(status)) {
       filter.status = status;
+    }
+    // Optional filter to return claims for a specific claimant
+    if (claimantId) {
+      filter.claimantId = claimantId;
     }
     
     const claims = await ClaimRequestModel.find(filter)

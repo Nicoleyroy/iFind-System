@@ -61,11 +61,11 @@ const Register = () => {
     <div className="flex min-h-screen bg-gray-100 items-center justify-center p-4">
       <div className="flex w-full max-w-5xl bg-white shadow-2xl rounded-3xl overflow-hidden">
         {/* LEFT - Gradient Welcome */}
-        <div className="hidden md:flex w-1/2 bg-linear-to-b from-[#8B0000] via-[#600000] to-[#3E0703] text-white flex-col items-center justify-center p-10 ">
+        <div className="hidden md:flex w-1/2 bg-gradient-to-b from-orange-500 via-orange-600 to-orange-700 text-white flex-col items-center justify-center p-10 ">
           <h2 className="text-4xl font-bold mb-2">Welcome Back!</h2>
           <p className="mb-6 text-lg">Already have an account?</p>
           <Link to="/login">
-            <button className="border-2 border-white rounded-full px-6 py-2 hover:bg-white hover:text-[#3E0703] transition-all">
+            <button className="border-2 border-white rounded-full px-6 py-2 hover:bg-white hover:text-orange-700 transition-all">
               Log in
             </button>
           </Link>
@@ -84,7 +84,7 @@ const Register = () => {
                 placeholder="First Name"
                 onChange={handleChange}
                 required
-                className="w-1/2 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
+                className="w-1/2 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
               />
               <input
                 type="text"
@@ -92,7 +92,7 @@ const Register = () => {
                 placeholder="Last Name"
                 onChange={handleChange}
                 required
-                className="w-1/2 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
+                className="w-1/2 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
               />
             </div>
             <input
@@ -101,7 +101,7 @@ const Register = () => {
               placeholder="Email"
               onChange={handleChange}
               required
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
             />
             <input
               type="password"
@@ -109,7 +109,7 @@ const Register = () => {
               placeholder="Password"
               onChange={handleChange}
               required
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
             />
             <input
               type="password"
@@ -117,7 +117,7 @@ const Register = () => {
               placeholder="Confirm Password"
               onChange={handleChange}
               required
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
             />
 
             {success && (
@@ -137,16 +137,10 @@ const Register = () => {
               <div className="text-red-600 text-sm mb-2">{error}</div>
             )}
 
-            <div className="flex items-center justify-center text-gray-400 text-sm my-2">
-              <span className="border-t border-gray-300 w-20"></span>
-              <span className="mx-3">or</span>
-              <span className="border-t border-gray-300 w-20"></span>
-            </div>
-
             <button
               type="submit"
               disabled={success}
-              className={`w-full bg-[#8B0000] text-white rounded-lg py-2 font-semibold hover:bg-[#600000] transition ${
+              className={`w-full bg-orange-500 text-white rounded-lg py-2 font-semibold hover:bg-orange-600 transition ${
                 success ? 'opacity-60 cursor-not-allowed' : ''
               }`}
             >

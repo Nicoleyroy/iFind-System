@@ -21,18 +21,18 @@ export default function ModSidebar() {
           />
           <div className="flex flex-col items-center">
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">iFind</h1>
-            <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">Moderator Panel</span>
+            <span className="text-xs text-orange-600 font-medium uppercase tracking-wider">Moderator Panel</span>
           </div>
         </div>
       </div>
 
       {/* Navigation Section */}
-      <nav className="flex-1 space-y-2 px-6 overflow-y-auto">
+      <nav className="flex-1 space-y-2 px-6 py-4 overflow-y-auto">
         <NavLink
           to="/moderator/dashboard"
           className={({ isActive }) =>
             `flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-              isActive ? "bg-red-700 text-white shadow-lg" : "text-gray-700 hover:bg-gray-100"
+              isActive ? "bg-orange-500 text-white shadow-lg" : "text-gray-700 hover:bg-gray-100"
             }`
           }
         >
@@ -45,7 +45,7 @@ export default function ModSidebar() {
           <button
             onClick={() => setExpandItems(!expandItems)}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-              isItemsActive ? "bg-red-700 text-white shadow-lg" : "text-gray-700 hover:bg-gray-100"
+              isItemsActive ? "bg-orange-500 text-white shadow-lg" : "text-gray-700 hover:bg-gray-100"
             }`}
           >
             <Box className="w-5 h-5" />
@@ -60,7 +60,7 @@ export default function ModSidebar() {
                 to="/moderator/LostItem/Management"
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-2 rounded-xl transition-all text-sm ${
-                    isActive ? "bg-red-700 text-white font-semibold shadow-md" : "text-gray-600 hover:bg-gray-100"
+                    isActive ? "bg-orange-500 text-white font-semibold shadow-md" : "text-gray-600 hover:bg-gray-100"
                   }`
                 }
               >
@@ -72,7 +72,7 @@ export default function ModSidebar() {
                 to="/moderator/FoundItem/Management"
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-2 rounded-xl transition-all text-sm ${
-                    isActive ? "bg-red-700 text-white font-semibold shadow-md" : "text-gray-600 hover:bg-gray-100"
+                    isActive ? "bg-orange-500 text-white font-semibold shadow-md" : "text-gray-600 hover:bg-gray-100"
                   }`
                 }
               >
@@ -87,7 +87,7 @@ export default function ModSidebar() {
           to="/moderator/item-verification"
           className={({ isActive }) =>
             `flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-              isActive ? "bg-red-700 text-white shadow-lg" : "text-gray-700 hover:bg-gray-100"
+              isActive ? "bg-orange-500 text-white shadow-lg" : "text-gray-700 hover:bg-gray-100"
             }`
           }
         >
@@ -99,7 +99,7 @@ export default function ModSidebar() {
           to="/moderator/reports-dashboard"
           className={({ isActive }) =>
             `flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-              isActive ? "bg-red-700 text-white shadow-lg" : "text-gray-700 hover:bg-gray-100"
+              isActive ? "bg-orange-500 text-white shadow-lg" : "text-gray-700 hover:bg-gray-100"
             }`
           }
         >
@@ -108,10 +108,10 @@ export default function ModSidebar() {
         </NavLink>
 
         <NavLink
-          to="/admin/settings"
+          to="/moderator/settings"
           className={({ isActive }) =>
             `flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-              isActive ? "bg-red-700 text-white shadow-lg" : "text-gray-700 hover:bg-gray-100"
+              isActive ? "bg-orange-500 text-white shadow-lg" : "text-gray-700 hover:bg-gray-100"
             }`
           }
         >
@@ -121,9 +121,9 @@ export default function ModSidebar() {
       </nav>
 
       {/* Logout Section */}
-      <div className="px-6 py-6">
+      <div className="px-6 py-6 border-t border-gray-200">
         <NavLink to={"/"}>
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-gray-100 transition-all font-medium">
+          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all font-medium">
             <LogOut className="w-5 h-5" />
             <span>Log out</span>
           </button>

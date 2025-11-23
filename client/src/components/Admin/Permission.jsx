@@ -303,8 +303,11 @@ const Permission = () => {
               <h2 className="text-xl font-bold text-gray-900 mb-4">Administrators</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 {loading ? (
-                  <div className="col-span-full text-center py-8">
-                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-orange-500 border-r-transparent"></div>
+                  <div className="col-span-full flex items-center justify-center h-64">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+                      <p className="mt-4 text-gray-600">Loading administrators...</p>
+                    </div>
                   </div>
                 ) : filteredAdmins.length === 0 ? (
                   <div className="col-span-full text-center py-8 text-gray-500">No administrators found</div>
@@ -371,8 +374,11 @@ const Permission = () => {
               <h2 className="text-xl font-bold text-gray-900 mb-4">Moderators</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {loading ? (
-                  <div className="col-span-full text-center py-8">
-                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-orange-500 border-r-transparent"></div>
+                  <div className="col-span-full flex items-center justify-center h-64">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+                      <p className="mt-4 text-gray-600">Loading moderators...</p>
+                    </div>
                   </div>
                 ) : filteredModerators.length === 0 ? (
                   <div className="col-span-full text-center py-8 text-gray-500">No moderators found</div>

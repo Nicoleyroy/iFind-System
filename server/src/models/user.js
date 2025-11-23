@@ -53,5 +53,24 @@ const UserSchema = new Schema({
   timestamps: true,
 });
 
+// Cascade delete: Remove all items posted by user when user is deleted
+UserSchema.pre('findOneAndDelete', async function(next) {
+  try {
+    const userId = this.getQuery()._id;
+    
+    // Delete all lost items by this user
+    const LostItemModel = require('./lostItem');
+    await LostItemModel.deleteMany({ userId: userId });
+    
+    // Delete all found items by this user
+    const FoundItemModel = require('./foundItem');
+    await FoundItemModel.deleteMany({ userId: userId });
+    
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 const UserModel = mongoose.model('User', UserSchema);
 module.exports = UserModel;

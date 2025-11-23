@@ -3,7 +3,7 @@ import {
   Search, Filter, Plus, Edit, Trash2, Eye, Calendar,
   MapPin, Package, CheckCircle, XCircle, Clock, AlertCircle,
   Image as ImageIcon, Save, X as CloseIcon, Download, Archive,
-  RotateCcw, TrendingUp, Box, Layers, Grid, List, Bell, User
+  RotateCcw, TrendingUp, Box, Layers, Bell, User
 } from "lucide-react";
 import ModSidebar from "../layout/ModSidebar";
 import { API_ENDPOINTS } from "../../utils/constants";
@@ -15,7 +15,6 @@ const ModFoundItemManagement = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
-  const [viewMode, setViewMode] = useState("grid"); // grid or list
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("add"); // add, edit, view
   const [selectedItem, setSelectedItem] = useState(null);
@@ -54,6 +53,9 @@ const ModFoundItemManagement = () => {
 
   const getFilteredAndSortedItems = () => {
     let filtered = [...items];
+
+    // Filter out deleted items
+    filtered = filtered.filter(item => item.status !== "Deleted");
 
     // Status filter
     if (statusFilter !== "all") {
@@ -228,7 +230,7 @@ const ModFoundItemManagement = () => {
       
       <div className="flex-1 ml-64">
         {/* Modern Header with Gradient */}
-        <div className="bg-gradient-to-r from-red-700 via-red-600 to-rose-600 text-white px-8 py-10">
+        <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white px-8 py-10">
           <div className="flex items-center justify-between mb-6">
             {/* Notification Bell */}
             <div className="relative">
@@ -246,7 +248,7 @@ const ModFoundItemManagement = () => {
                   <p className="text-white text-sm font-semibold leading-tight">JOANNA NICOLE YROY</p>
                   <p className="text-white/70 text-xs">Moderator</p>
                 </div>
-                <div className="w-11 h-11 bg-red-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
+                <div className="w-11 h-11 bg-orange-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
                   <span className="text-white text-lg font-bold">J</span>
                 </div>
               </div>
@@ -265,7 +267,7 @@ const ModFoundItemManagement = () => {
                 resetForm();
                 setShowModal(true);
               }}
-              className="bg-white text-red-700 px-6 py-3 rounded-xl font-semibold flex items-center gap-2 hover:bg-red-50 transition-all shadow-lg hover:shadow-xl"
+              className="bg-white text-orange-600 px-6 py-3 rounded-xl font-semibold flex items-center gap-2 hover:bg-orange-50 transition-all shadow-lg hover:shadow-xl"
             >
               <Plus className="w-5 h-5" />
               Add New Item
@@ -276,7 +278,7 @@ const ModFoundItemManagement = () => {
         <div className="px-8 py-6">
           {/* Stats Cards - Modern Design */}
           <div className="-mt-12 mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {/* Total Items Card */}
               <div 
                 className={`bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border-2 cursor-pointer ${
@@ -349,31 +351,6 @@ const ModFoundItemManagement = () => {
                   {statusFilter === "archived" ? "Clear Filter" : "Manage"}
                 </button>
               </div>
-              
-              {/* Deleted Items Card */}
-              <div 
-                className={`bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border-2 cursor-pointer ${
-                  statusFilter === "deleted" ? "border-red-500 ring-2 ring-red-200" : "border-gray-100"
-                }`}
-                onClick={() => setStatusFilter(statusFilter === "deleted" ? "all" : "deleted")}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-gray-500 text-sm font-medium mb-2">
-                      Deleted {statusFilter === "deleted" && <span className="text-red-600 font-bold">✓</span>}
-                    </h3>
-                    <p className="text-4xl font-bold text-gray-900">
-                      {items.filter(item => item.status === "Deleted").length}
-                    </p>
-                  </div>
-                  <div className={`p-3 rounded-xl ${statusFilter === "deleted" ? "bg-red-500" : "bg-red-50"}`}>
-                    <XCircle className={`w-8 h-8 ${statusFilter === "deleted" ? "text-white" : "text-red-600"}`} />
-                  </div>
-                </div>
-                <button className="mt-3 w-full px-4 py-2 bg-red-50 hover:bg-red-100 rounded-lg text-sm font-semibold text-red-600 transition-colors">
-                  {statusFilter === "deleted" ? "Clear Filter" : "Review"}
-                </button>
-              </div>
             </div>
           </div>
 
@@ -389,7 +366,7 @@ const ModFoundItemManagement = () => {
                     placeholder="Search by name, location, category..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent w-full transition-all"
+                    className="pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent w-full transition-all"
                   />
                 </div>
 
@@ -402,7 +379,6 @@ const ModFoundItemManagement = () => {
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
                     <option value="archived">Archived</option>
-                    <option value="deleted">Deleted</option>
                   </select>
 
                   <select
@@ -427,42 +403,18 @@ const ModFoundItemManagement = () => {
                   </select>
                 </div>
               </div>
-
-              {/* View Toggle */}
-              <div className="flex items-center gap-2 bg-gray-100 rounded-xl p-1">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                    viewMode === "grid" 
-                      ? "bg-white text-red-700 shadow-sm" 
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
-                >
-                  <Grid className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                    viewMode === "list" 
-                      ? "bg-white text-red-700 shadow-sm" 
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
-                >
-                  <List className="w-5 h-5" />
-                </button>
-              </div>
             </div>
 
             {/* Results Count */}
             <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Box className="w-4 h-4" />
-                <span className="font-medium">Showing <span className="text-red-700 font-bold">{filteredItems.length}</span> of <span className="font-bold">{items.length}</span> items</span>
+                <span className="font-medium">Showing <span className="text-orange-600 font-bold">{filteredItems.length}</span> of <span className="font-bold">{items.length}</span> items</span>
               </div>
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm("")}
-                  className="text-sm text-red-700 hover:text-red-800 font-medium"
+                  className="text-sm text-orange-600 hover:text-orange-700 font-medium"
                 >
                   Clear search
                 </button>
@@ -474,7 +426,7 @@ const ModFoundItemManagement = () => {
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="text-center">
-                <Clock className="w-16 h-16 text-red-700 animate-spin mx-auto mb-4" />
+                <Clock className="w-16 h-16 text-orange-600 animate-spin mx-auto mb-4" />
                 <p className="text-gray-600 text-lg font-medium">Loading items...</p>
               </div>
             </div>
@@ -496,166 +448,12 @@ const ModFoundItemManagement = () => {
                     resetForm();
                     setShowModal(true);
                   }}
-                  className="bg-red-700 text-white px-8 py-4 rounded-xl font-bold inline-flex items-center gap-2 hover:bg-red-800 transition-all shadow-lg hover:shadow-xl"
+                  className="bg-orange-600 text-white px-8 py-4 rounded-xl font-bold inline-flex items-center gap-2 hover:bg-orange-700 transition-all shadow-lg hover:shadow-xl"
                 >
                   <Plus className="w-6 h-6" />
                   Add Your First Item
                 </button>
               )}
-            </div>
-          ) : viewMode === "grid" ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-              {filteredItems.map((item) => (
-                <div key={item._id} className="bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group border-2 border-gray-100 hover:border-red-300">
-                  {/* Item Image with Gradient Overlay */}
-                  <div className="relative overflow-hidden h-64">
-                    {item.imageUrl ? (
-                      <>
-                        <img 
-                          src={item.imageUrl} 
-                          alt={item.name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      </>
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-red-50 via-rose-50 to-pink-50 flex items-center justify-center">
-                        <div className="text-center">
-                          <ImageIcon className="w-20 h-20 text-red-300 mx-auto mb-2" />
-                          <p className="text-sm text-red-400 font-medium">No Image</p>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Status Badge */}
-                    <div className="absolute top-4 right-4">
-                      <span className={`px-4 py-2 rounded-full text-xs font-bold shadow-xl backdrop-blur-md ${
-                        item.status === "Active" ? "bg-green-500/90 text-white ring-2 ring-green-300" :
-                        item.status === "Archived" ? "bg-yellow-500/90 text-white ring-2 ring-yellow-300" :
-                        "bg-red-500/90 text-white ring-2 ring-red-300"
-                      }`}>
-                        {item.status || "Active"}
-                      </span>
-                    </div>
-
-                    {/* Quick Actions Overlay */}
-                    <div className="absolute top-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleView(item)}
-                          className="p-2.5 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-all shadow-lg"
-                          title="Quick View"
-                        >
-                          <Eye className="w-5 h-5 text-gray-700" />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(item)}
-                          className="p-2.5 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-all shadow-lg"
-                          title="Quick Edit"
-                        >
-                          <Edit className="w-5 h-5 text-blue-600" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Item Content */}
-                  <div className="p-6">
-                    {/* Title with Category Badge */}
-                    <div className="flex items-start justify-between mb-3">
-                      <h3 className="text-xl font-bold text-gray-900 line-clamp-2 flex-1 leading-tight">
-                        {item.name}
-                      </h3>
-                    </div>
-
-                    {item.category && (
-                      <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold mb-3">
-                        {item.category}
-                      </span>
-                    )}
-                    
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2 min-h-[40px] leading-relaxed">
-                      {item.description || "No description provided"}
-                    </p>
-
-                    {/* Info Grid */}
-                    <div className="bg-gray-50 rounded-xl p-4 mb-4 space-y-2.5">
-                      {item.location && (
-                        <div className="flex items-center gap-2.5 text-sm">
-                          <div className="flex-shrink-0 p-2 bg-blue-100 rounded-lg">
-                            <MapPin className="w-4 h-4 text-blue-600" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-xs text-gray-500 font-medium">Location</p>
-                            <p className="text-gray-900 font-semibold">{item.location}</p>
-                          </div>
-                        </div>
-                      )}
-                      {item.date && (
-                        <div className="flex items-center gap-2.5 text-sm">
-                          <div className="flex-shrink-0 p-2 bg-orange-100 rounded-lg">
-                            <Calendar className="w-4 h-4 text-orange-600" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-xs text-gray-500 font-medium">Date Found</p>
-                            <p className="text-gray-900 font-semibold">{new Date(item.date).toLocaleDateString()}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="space-y-2">
-                      <div className="grid grid-cols-3 gap-2">
-                        <button
-                          onClick={() => handleView(item)}
-                          className="px-3 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold text-xs hover:bg-gray-200 hover:scale-105 transition-all flex items-center justify-center gap-1.5"
-                        >
-                          <Eye className="w-4 h-4" />
-                          <span>View</span>
-                        </button>
-                        <button
-                          onClick={() => handleEdit(item)}
-                          className="px-3 py-2.5 bg-blue-500 text-white rounded-xl font-bold text-xs hover:bg-blue-600 hover:scale-105 transition-all flex items-center justify-center gap-1.5"
-                        >
-                          <Edit className="w-4 h-4" />
-                          <span>Edit</span>
-                        </button>
-                        <button
-                          onClick={() => handleDelete(item._id)}
-                          className="px-3 py-2.5 bg-red-500 text-white rounded-xl font-bold text-xs hover:bg-red-600 hover:scale-105 transition-all flex items-center justify-center gap-1.5"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      {/* Status Change Button */}
-                      {item.status !== "Deleted" && (
-                        <div>
-                          {item.status === "Active" && (
-                            <button
-                              onClick={() => handleStatusChange(item._id, "Archived")}
-                              className="w-full px-4 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl text-sm font-bold hover:from-yellow-600 hover:to-orange-600 transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
-                            >
-                              <Archive className="w-4 h-4" />
-                              Archive Item
-                            </button>
-                          )}
-                          {item.status === "Archived" && (
-                            <button
-                              onClick={() => handleStatusChange(item._id, "Active")}
-                              className="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl text-sm font-bold hover:from-green-600 hover:to-emerald-600 transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
-                            >
-                              <RotateCcw className="w-4 h-4" />
-                              Restore Item
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
             </div>
           ) : (
             <div className="bg-white rounded-2xl shadow-md overflow-hidden">
@@ -663,7 +461,9 @@ const ModFoundItemManagement = () => {
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b-2 border-gray-200">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Item</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Image</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Name</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Description</th>
                       <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Category</th>
                       <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Location</th>
                       <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Date</th>
@@ -675,19 +475,19 @@ const ModFoundItemManagement = () => {
                     {filteredItems.map((item) => (
                       <tr key={item._id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            {item.imageUrl ? (
-                              <img src={item.imageUrl} alt={item.name} className="w-12 h-12 rounded-lg object-cover" />
-                            ) : (
-                              <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                                <ImageIcon className="w-6 h-6 text-gray-400" />
-                              </div>
-                            )}
-                            <div>
-                              <p className="font-bold text-gray-900">{item.name}</p>
-                              <p className="text-sm text-gray-500 line-clamp-1">{item.description}</p>
+                          {item.imageUrl ? (
+                            <img src={item.imageUrl} alt={item.name} className="w-16 h-16 rounded-lg object-cover" />
+                          ) : (
+                            <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                              <ImageIcon className="w-8 h-8 text-gray-400" />
                             </div>
-                          </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="font-bold text-gray-900">{item.name}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-sm text-gray-600 max-w-xs line-clamp-2">{item.description}</p>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-700 font-medium">{item.category || "N/A"}</td>
                         <td className="px-6 py-4 text-sm text-gray-700">{item.location || "N/A"}</td>
@@ -746,7 +546,7 @@ const ModFoundItemManagement = () => {
           }}
         >
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-slideUp">
-            <div className="sticky top-0 bg-gradient-to-r from-red-700 to-rose-600 text-white px-8 py-6 flex items-center justify-between z-10">
+            <div className="sticky top-0 bg-gradient-to-r from-orange-600 to-orange-600 text-white px-8 py-6 flex items-center justify-between z-10">
               <div>
                 <h2 className="text-2xl font-bold">
                   {modalMode === "add" ? "Add New Item" : modalMode === "edit" ? "Edit Item" : "Item Details"}
@@ -913,7 +713,7 @@ const ModFoundItemManagement = () => {
                 <div className="flex gap-3 pt-4">
                   <button
                     type="submit"
-                    className="flex-1 bg-red-700 text-white px-6 py-3 rounded-xl font-bold hover:bg-red-800 transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 bg-orange-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-orange-700 transition-colors flex items-center justify-center gap-2"
                   >
                     <Save className="w-5 h-5" />
                     {modalMode === "edit" ? "Update Item" : "Add Item"}

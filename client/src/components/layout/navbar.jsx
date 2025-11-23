@@ -29,7 +29,6 @@ function Navbar() {
   })
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   useEffect(() => {
     // Load user data from localStorage
@@ -147,10 +146,15 @@ function Navbar() {
       }
     }
     
-    // Navigate to related item if available
+    // If the notification refers to a claim (has relatedClaimId) navigate to claim list and open that claim
+    if (notification.relatedClaimId) {
+      navigate(`/profile/claims?openClaim=${notification.relatedClaimId}`);
+      return;
+    }
+
+    // Otherwise navigate to related item if available
     if (notification.relatedItemId) {
       navigate('/found');
-      setNotificationsOpen(false);
     }
   };
 
@@ -229,7 +233,6 @@ function Navbar() {
                     <PopoverButton
                       type="button"
                       className="relative rounded-lg p-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:outline-none transition-all duration-200"
-                      onClick={() => setNotificationsOpen(!notificationsOpen)}
                     >
                       <span className="sr-only">View notifications</span>
                       <BellIcon aria-hidden="true" className="h-6 w-6" />
@@ -433,7 +436,6 @@ function Navbar() {
                   <PopoverButton
                     type="button"
                     className="relative ml-auto shrink-0 rounded-full p-1 text-gray-700 hover:text-gray-900 focus:outline-2 focus:outline-offset-2 focus:outline-orange-500"
-                    onClick={() => setNotificationsOpen(!notificationsOpen)}
                   >
                     <span className="absolute -inset-1.5" />
                     <span className="sr-only">View notifications</span>

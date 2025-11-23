@@ -22,7 +22,6 @@ import { API_ENDPOINTS } from "../../utils/constants";
 const STATUS_OPTIONS = [
   { value: "Active", label: "Active", color: "bg-blue-100", textColor: "text-blue-800", borderColor: "border-blue-300" },
   { value: "Archived", label: "Archived", color: "bg-amber-100", textColor: "text-amber-800", borderColor: "border-amber-300" },
-  { value: "Deleted", label: "Deleted", color: "bg-red-100", textColor: "text-red-800"},
 ];
 
 //notifications
@@ -65,19 +64,19 @@ const MetricCard = ({ label, value, Icon, isPrimary = false }) => (
   <div
     className={`flex-1 rounded-2xl p-6 flex items-center justify-between transition-all duration-300 transform hover:shadow-xl hover:-translate-y-1 cursor-pointer border-2 ${
       isPrimary
-        ? "bg-red-50 border-rose-300 shadow-lg"
+        ? "bg-orange-50 border-orange-300 shadow-lg"
         : "bg-white border-gray-100 shadow-md hover:border-gray-300"
     }`}
     role="article"
     aria-label={`${label}: ${value}`}
   >
     <div>
-      <p className={`font-semibold mb-2 text-sm tracking-wide ${isPrimary ? "text-rose-700" : "text-gray-600"}`}>
+      <p className={`font-semibold mb-2 text-sm tracking-wide ${isPrimary ? "text-orange-700" : "text-gray-600"}`}>
         {label}
       </p>
       <p
         className={`text-4xl font-black ${
-          isPrimary ? "text-rose-900" : "text-gray-900"
+          isPrimary ? "text-orange-900" : "text-gray-900"
         }`}
       >
         {value}
@@ -85,11 +84,11 @@ const MetricCard = ({ label, value, Icon, isPrimary = false }) => (
     </div>
     <span
       className={`p-5 rounded-2xl transition-transform duration-300 ${
-        isPrimary ? "bg-rose-200 group-hover:scale-110" : "bg-gray-100"
+        isPrimary ? "bg-orange-200 group-hover:scale-110" : "bg-gray-100"
       }`}
     >
       <Icon
-        className={`w-8 h-8 ${isPrimary ? "text-rose-700" : "text-gray-500"}`}
+        className={`w-8 h-8 ${isPrimary ? "text-orange-700" : "text-gray-500"}`}
       />
     </span>
   </div>
@@ -154,7 +153,7 @@ const EmptyState = ({ onClearFilters }) => (
     </p>
     <button
       onClick={onClearFilters}
-      className="px-6 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition font-medium"
+      className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition font-medium"
       aria-label="Clear all filters"
     >
       Clear Filters
@@ -251,7 +250,7 @@ const ConfirmationModal = ({
             className={`px-6 py-3 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
               isDestructive
                 ? "bg-red-600 hover:bg-red-700"
-                : "bg-rose-600 hover:bg-rose-700"
+                : "bg-orange-600 hover:bg-orange-700"
             }`}
             aria-label={actionLabel}
           >
@@ -295,7 +294,6 @@ const ModLostItemManagement = () => {
   const [metrics, setMetrics] = useState({
     activeLost: 0,
     archived: 0,
-    deleted: 0,
   });
 
   // stuff for the modals and toast notifications
@@ -320,7 +318,6 @@ const ModLostItemManagement = () => {
       const fetchedItems = response.data.data || [];
       setItems(fetchedItems);
       updateMetrics(fetchedItems);
-      showToast("Items loaded successfully", "success");
     } catch (error) {
       console.error("Failed to fetch items:", error);
       showToast(
@@ -347,11 +344,7 @@ const ModLostItemManagement = () => {
       (item) => item.status === "Archived"
     ).length;
 
-    const deleted = itemsList.filter(
-      (item) => item.status === "Deleted"
-    ).length;
-
-    setMetrics({ activeLost: activeLost, archived, deleted });
+    setMetrics({ activeLost: activeLost, archived });
   };
 
   // filter and search logic
@@ -365,10 +358,10 @@ const ModLostItemManagement = () => {
         (item) =>
           (item.status || "Active").toLowerCase() === statusFilter.toLowerCase()
       );
-    } else {
-      // When "All" is selected, exclude deleted
-      filtered = filtered.filter((item) => item.status !== "Deleted");
     }
+    
+    // Always exclude deleted items
+    filtered = filtered.filter((item) => item.status !== "Deleted");
 
     // Apply search filter
     if (searchTerm.trim()) {
@@ -518,7 +511,7 @@ const ModLostItemManagement = () => {
           </div>
         )}
         {/* Modern Header with Gradient */}
-        <div className="bg-gradient-to-r from-red-700 via-red-600 to-rose-600 text-white px-8 py-10">
+        <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white px-8 py-10">
           <div className="flex items-center justify-between mb-6">
             {/* Notification Bell */}
             <div className="relative">
@@ -535,7 +528,7 @@ const ModLostItemManagement = () => {
                   <p className="text-white text-sm font-semibold leading-tight">JOANNA NICOLE YROY</p>
                   <p className="text-white/70 text-xs">Moderator</p>
                 </div>
-                <div className="w-11 h-11 bg-red-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
+                <div className="w-11 h-11 bg-orange-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
                   <span className="text-white text-lg font-bold">J</span>
                 </div>
               </div>
@@ -546,7 +539,7 @@ const ModLostItemManagement = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold mb-2">Lost Items Management</h1>
-              <p className="text-red-100 text-lg">Manage and track all lost items in the system</p>
+              <p className="text-orange-100 text-lg">Manage and track all lost items in the system</p>
             </div>
           </div>
         </div>
@@ -554,7 +547,7 @@ const ModLostItemManagement = () => {
         {/* Metrics Section */}
         <section className="px-8 py-6">
           <div className="-mt-12 mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border border-gray-100">
                 <div className="flex items-start justify-between mb-4">
                   <div>
@@ -582,21 +575,6 @@ const ModLostItemManagement = () => {
                 </div>
                 <button className="mt-3 w-full px-4 py-2 bg-green-50 hover:bg-green-100 rounded-lg text-sm font-semibold text-green-600 transition-colors">
                   Manage
-                </button>
-              </div>
-              
-              <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border border-gray-100">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-gray-500 text-sm font-medium mb-2">Deleted</h3>
-                    <p className="text-4xl font-bold text-gray-900">{metrics.deleted}</p>
-                  </div>
-                  <div className="p-3 bg-red-50 rounded-xl">
-                    <Trash2 className="w-8 h-8 text-red-600" />
-                  </div>
-                </div>
-                <button className="mt-3 w-full px-4 py-2 bg-red-50 hover:bg-red-100 rounded-lg text-sm font-semibold text-red-600 transition-colors">
-                  Review
                 </button>
               </div>
             </div>
@@ -643,7 +621,6 @@ const ModLostItemManagement = () => {
                 <option value="All">All Status</option>
                 <option value="Active">Active</option>
                 <option value="Archived">Archived</option>
-                <option value="Deleted">Deleted</option>
               </select>
               <ChevronDown className="absolute right-3 top-3.5 w-5 h-5 text-slate-400 pointer-events-none" />
             </div>

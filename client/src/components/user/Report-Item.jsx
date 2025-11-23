@@ -5,6 +5,7 @@ import { API_ENDPOINTS } from '../../utils/constants';
 
 function ReportItem() {
   const [itemName, setItemName] = useState("");
+  const [category, setCategory] = useState("");
   const [location, setLocation] = useState("");
   const [dateInfo, setDateInfo] = useState("");
   const [contactInfo, setContactInfo] = useState("");
@@ -41,6 +42,7 @@ function ReportItem() {
 
       const payload = {
         name: itemName,
+        category,
         location,
         date: dateInfo,
         contactInfo,
@@ -61,6 +63,7 @@ function ReportItem() {
       
       setSuccess('Report submitted successfully!');
       setItemName("");
+      setCategory("");
       setLocation("");
       setDateInfo("");
       setContactInfo("");
@@ -173,6 +176,27 @@ function ReportItem() {
                       onChange={(e) => setItemName(e.target.value)}
                       className="w-full rounded-md border border-[#5E5240]/20 bg-white px-3 py-2 text-sm text-[#134252] focus:outline-none focus:ring-2 focus:ring-[#21808D]"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-[#626C71] mb-1">Item Category</label>
+                    <select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      className="w-full rounded-md border border-[#5E5240]/20 bg-white px-3 py-2 text-sm text-[#134252] focus:outline-none focus:ring-2 focus:ring-[#21808D]"
+                    >
+                      <option value="">Select a category...</option>
+                      <option value="Electronics">Electronics</option>
+                      <option value="Personal Items">Personal Items</option>
+                      <option value="Bags & Wallets">Bags & Wallets</option>
+                      <option value="Keys">Keys</option>
+                      <option value="Clothing">Clothing</option>
+                      <option value="Accessories">Accessories</option>
+                      <option value="Books & Documents">Books & Documents</option>
+                      <option value="Sports Equipment">Sports Equipment</option>
+                      <option value="Jewelry">Jewelry</option>
+                      <option value="Other">Other</option>
+                    </select>
                   </div>
 
                   <div>

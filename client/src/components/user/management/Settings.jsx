@@ -74,7 +74,7 @@ function PasswordChangeForm({ userId, isGoogleAccount, onSuccess, onError }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {localError && (
-        <div className="p-3 bg-red-50 text-red-700 text-sm rounded-md">
+        <div className="p-3 bg-orange-50 text-orange-700 text-sm rounded-md">
           {localError}
         </div>
       )}
@@ -130,7 +130,7 @@ function PasswordChangeForm({ userId, isGoogleAccount, onSuccess, onError }) {
         <button
           type="submit"
           disabled={loading}
-          className={`bg-[#C0152F] text-white hover:bg-[#A01327] active:bg-[#8B1122] shadow-sm hover:shadow px-6 py-2 rounded-md text-sm font-medium transition-colors ${
+          className={`bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700 shadow-sm hover:shadow px-6 py-2 rounded-md text-sm font-medium transition-colors ${
             loading ? 'opacity-60 cursor-not-allowed' : ''
           }`}
         >
@@ -283,7 +283,7 @@ function Settings() {
             </div>
           )}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-md">
+            <div className="mb-4 p-3 bg-orange-50 text-orange-700 text-sm rounded-md">
               {error}
             </div>
           )}
@@ -302,27 +302,17 @@ function Settings() {
                     onClick={() => setActiveSection('profile')}
                     className={`w-full text-left px-4 py-3 rounded-md text-sm font-medium transition-colors ${
                       activeSection === 'profile'
-                        ? 'bg-[#C0152F] text-white'
+                        ? 'bg-orange-500 text-white'
                         : 'text-[#626C71] hover:bg-gray-100'
                     }`}
                   >
                     Profile
                   </button>
                   <button
-                    onClick={() => setActiveSection('notifications')}
-                    className={`w-full text-left px-4 py-3 rounded-md text-sm font-medium transition-colors ${
-                      activeSection === 'notifications'
-                        ? 'bg-[#C0152F] text-white'
-                        : 'text-[#626C71] hover:bg-gray-100'
-                    }`}
-                  >
-                    Notifications
-                  </button>
-                  <button
                     onClick={() => setActiveSection('account')}
                     className={`w-full text-left px-4 py-3 rounded-md text-sm font-medium transition-colors ${
                       activeSection === 'account'
-                        ? 'bg-[#C0152F] text-white'
+                        ? 'bg-orange-500 text-white'
                         : 'text-[#626C71] hover:bg-gray-100'
                     }`}
                   >
@@ -352,17 +342,17 @@ function Settings() {
                           <img
                             src={profilePicture}
                             alt="Profile"
-                            className="w-24 h-24 rounded-full object-cover border-2 border-[#C0152F]"
+                            className="w-24 h-24 rounded-full object-cover border-2 border-orange-500"
                           />
                         ) : (
-                          <div className="w-24 h-24 rounded-full bg-[#C0152F] flex items-center justify-center text-white text-2xl font-semibold">
+                          <div className="w-24 h-24 rounded-full bg-orange-500 flex items-center justify-center text-white text-2xl font-semibold">
                             {getInitials(formData.name || user?.name)}
                           </div>
                         )}
                       </div>
                       <div>
                         <label htmlFor="profile-picture-upload" className="cursor-pointer">
-                          <span className="inline-block bg-[#C0152F] text-white hover:bg-[#A01327] active:bg-[#8B1122] shadow-sm hover:shadow px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                          <span className="inline-block bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700 shadow-sm hover:shadow px-4 py-2 rounded-md text-sm font-medium transition-colors">
                             Change Photo
                           </span>
                           <input
@@ -422,19 +412,12 @@ function Settings() {
                       <button
                         type="submit"
                         disabled={loading || uploading}
-                        className={`bg-[#C0152F] text-white hover:bg-[#A01327] active:bg-[#8B1122] shadow-sm hover:shadow px-6 py-2 rounded-md text-sm font-medium ${loading || uploading ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        className={`bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700 shadow-sm hover:shadow px-6 py-2 rounded-md text-sm font-medium ${loading || uploading ? 'opacity-60 cursor-not-allowed' : ''}`}
                       >
                         {uploading ? 'Uploading...' : loading ? 'Saving...' : 'Save Changes'}
                       </button>
                     </div>
                   </form>
-                </div>
-              )}
-
-              {activeSection === 'notifications' && (
-                <div className="bg-white rounded-xl border border-[#5E5240]/10 p-6">
-                  <h2 className="text-[#134252] text-2xl font-semibold mb-6">Notification Settings</h2>
-                  <p className="text-[#626C71] text-sm">Notification preferences coming soon...</p>
                 </div>
               )}
 

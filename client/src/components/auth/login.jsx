@@ -252,7 +252,7 @@ const Login = () => {
               onChange={handleChange}
               value={formData.email}
               autoComplete="username"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
             />
             <input
               type="password"
@@ -262,7 +262,7 @@ const Login = () => {
               onChange={handleChange}
               value={formData.password}
               autoComplete="current-password"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
             />
 
             {/* ✅ reCAPTCHA */}
@@ -275,10 +275,10 @@ const Login = () => {
 
             <div className="flex justify-between text-sm text-gray-600">
               <label className="flex items-center gap-2">
-                <input type="checkbox" className="accent-[#8B0000]" />
+                <input type="checkbox" className="accent-orange-500" />
                 Remember me
               </label>
-              <Link to="/forgot" className="text-[#8B0000] hover:underline">
+              <Link to="/forgot" className="text-orange-600 hover:underline">
                 Forgot password?
               </Link>
             </div>
@@ -289,7 +289,7 @@ const Login = () => {
 
             <button
               type="submit"
-              className="w-full bg-[#8B0000] text-white rounded-lg py-2 font-semibold hover:bg-[#F5515F] transition"
+              className="w-full bg-orange-500 text-white rounded-lg py-2 font-semibold hover:bg-orange-600 transition"
             >
               Log in
             </button>
@@ -312,11 +312,11 @@ const Login = () => {
         </div>
 
         {/* RIGHT - Gradient Welcome */}
-        <div className="hidden md:flex w-1/2 bg-gradient-to-b from-[#F5515F] via-[#A1051D] to-[#3E0703] text-white flex-col items-center justify-center p-10">
+        <div className="hidden md:flex w-1/2 bg-gradient-to-b from-orange-500 via-orange-600 to-orange-700 text-white flex-col items-center justify-center p-10">
           <h2 className="text-4xl font-bold mb-2">Hello!</h2>
           <p className="mb-6 text-lg">Don't have an account yet?</p>
           <Link to="/register">
-            <button className="border-2 border-white rounded-full px-6 py-2 hover:bg-white hover:text-[#3E0703] transition-all">
+            <button className="border-2 border-white rounded-full px-6 py-2 hover:bg-white hover:text-orange-700 transition-all">
               Sign Up
             </button>
           </Link>

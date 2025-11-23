@@ -25,10 +25,19 @@ const AdminSettings = () => {
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
   const [profileData, setProfileData] = useState({
-    firstName: currentUser.firstName || '',
-    lastName: currentUser.lastName || '',
+    name: currentUser.name || '',
     email: currentUser.email || '',
+    phoneNumber: currentUser.phoneNumber || '',
+    profilePicture: currentUser.profilePicture || '',
   });
+
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const [systemSettings, setSystemSettings] = useState({
     siteName: 'iFind Lost & Found',
@@ -168,17 +177,21 @@ const AdminSettings = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await fetch(API_ENDPOINTS.USER_BY_ID(currentUser.id), {
+      const response = await fetch(API_ENDPOINTS.USER_BY_ID(currentUser._id || currentUser.id), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profileData),
       });
 
       if (response.ok) {
-        const updatedUserData = await response.json();
+        const result = await response.json();
         // Update localStorage with new user data
         const updatedUser = { ...currentUser, ...profileData };
         localStorage.setItem('user', JSON.stringify(updatedUser));
+        
+        // Dispatch custom event to update navbar
+        window.dispatchEvent(new Event('userUpdated'));
+        
         showSaveMessage('success', 'Profile updated successfully!');
       } else {
         const error = await response.json();
@@ -187,6 +200,87 @@ const AdminSettings = () => {
     } catch (error) {
       console.error('Profile update error:', error);
       showSaveMessage('error', 'An error occurred while updating profile.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      showSaveMessage('error', 'Please upload an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      showSaveMessage('error', 'Image size must be less than 5MB');
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      // Import cloudinary upload function
+      const { uploadToCloudinary } = await import('../../utils/cloudinary');
+      const imageUrl = await uploadToCloudinary(file);
+      
+      setProfileData({ ...profileData, profilePicture: imageUrl });
+      showSaveMessage('success', 'Image uploaded successfully! Click "Update Profile" to save.');
+    } catch (error) {
+      console.error('Image upload error:', error);
+      showSaveMessage('error', 'Failed to upload image. Please try again.');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      showSaveMessage('error', 'All password fields are required');
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      showSaveMessage('error', 'New passwords do not match');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      showSaveMessage('error', 'New password must be at least 6 characters');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(API_ENDPOINTS.CHANGE_PASSWORD(currentUser._id || currentUser.id), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      });
+
+      if (response.ok) {
+        showSaveMessage('success', 'Password changed successfully!');
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        });
+      } else {
+        const error = await response.json();
+        showSaveMessage('error', error.message || 'Failed to change password.');
+      }
+    } catch (error) {
+      console.error('Password change error:', error);
+      showSaveMessage('error', 'An error occurred while changing password.');
     } finally {
       setLoading(false);
     }
@@ -997,49 +1091,223 @@ const AdminSettings = () => {
               {/* Profile Tab */}
               {activeTab === 'profile' && (
                 <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-900">Admin Profile</h3>
-                  <form onSubmit={handleSaveProfile} className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Admin Profile</h3>
+                    <p className="text-sm text-gray-600 mt-1">Manage your personal information and account settings</p>
+                  </div>
+
+                  {/* Profile Picture Section */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-6">
+                    <h4 className="text-md font-semibold text-gray-900 mb-4">Profile Picture</h4>
+                    <div className="flex items-center gap-6">
+                      <div className="relative">
+                        {profileData.profilePicture ? (
+                          <img
+                            src={profileData.profilePicture}
+                            alt="Profile"
+                            className="w-24 h-24 rounded-full object-cover border-4 border-gray-200 shadow-sm"
+                          />
+                        ) : (
+                          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center border-4 border-gray-200 shadow-sm">
+                            <span className="text-white text-3xl font-bold">
+                              {profileData.name?.charAt(0).toUpperCase() || currentUser.name?.charAt(0).toUpperCase() || 'A'}
+                            </span>
+                          </div>
+                        )}
+                        {uploadingImage && (
+                          <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <label className="block">
+                          <span className="sr-only">Choose profile photo</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            disabled={uploadingImage}
+                            className="block w-full text-sm text-gray-500
+                              file:mr-4 file:py-2 file:px-4
+                              file:rounded-lg file:border-0
+                              file:text-sm file:font-semibold
+                              file:bg-orange-50 file:text-orange-700
+                              hover:file:bg-orange-100
+                              file:cursor-pointer cursor-pointer
+                              disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                        </label>
+                        <p className="mt-2 text-xs text-gray-500">
+                          JPG, PNG or GIF. Max size 5MB.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Personal Information */}
+                  <form onSubmit={handleSaveProfile} className="bg-white border border-gray-200 rounded-lg p-6">
+                    <h4 className="text-md font-semibold text-gray-900 mb-4">Personal Information</h4>
+                    <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-2">First Name</label>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">Full Name *</label>
                         <input
                           type="text"
-                          value={profileData.firstName}
-                          onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
+                          value={profileData.name}
+                          onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                          required
                           className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          placeholder="Enter your full name"
                         />
                       </div>
+
                       <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-2">Last Name</label>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">Email Address *</label>
                         <input
-                          type="text"
-                          value={profileData.lastName}
-                          onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
+                          type="email"
+                          value={profileData.email}
+                          onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                          required
                           className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          placeholder="your.email@example.com"
                         />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">Phone Number</label>
+                        <input
+                          type="tel"
+                          value={profileData.phoneNumber}
+                          onChange={(e) => setProfileData({ ...profileData, phoneNumber: e.target.value })}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          placeholder="+1 (555) 000-0000"
+                        />
+                      </div>
+
+                      <div className="pt-4 border-t border-gray-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">Account Role</p>
+                            <p className="text-sm text-gray-600">{currentUser.role || 'Administrator'}</p>
+                          </div>
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            {currentUser.role?.toUpperCase() || 'ADMIN'}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">Email Address</label>
-                      <input
-                        type="email"
-                        value={profileData.email}
-                        onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    <div className="flex justify-end pt-2">
+                    <div className="flex justify-end pt-6">
                       <button
                         type="submit"
                         disabled={loading}
-                        className="px-6 py-2.5 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 transition-colors"
+                        className="px-6 py-2.5 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 transition-colors shadow-sm"
                       >
                         {loading ? 'Updating...' : 'Update Profile'}
                       </button>
                     </div>
                   </form>
+
+                  {/* Change Password */}
+                  <form onSubmit={handleChangePassword} className="bg-white border border-gray-200 rounded-lg p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <KeyIcon className="w-5 h-5 text-orange-600" />
+                      <h4 className="text-md font-semibold text-gray-900">Change Password</h4>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">Current Password *</label>
+                        <input
+                          type="password"
+                          value={passwordData.currentPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          placeholder="Enter current password"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">New Password *</label>
+                        <input
+                          type="password"
+                          value={passwordData.newPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          placeholder="Enter new password (min 6 characters)"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">Confirm New Password *</label>
+                        <input
+                          type="password"
+                          value={passwordData.confirmPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          placeholder="Confirm new password"
+                        />
+                      </div>
+
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h5 className="text-sm font-semibold text-blue-900 mb-2">Password Requirements:</h5>
+                        <ul className="text-sm text-blue-700 space-y-1">
+                          <li className="flex items-center gap-2">
+                            <CheckCircleIcon className="w-4 h-4" />
+                            At least 6 characters long
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <CheckCircleIcon className="w-4 h-4" />
+                            Include numbers and letters
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <CheckCircleIcon className="w-4 h-4" />
+                            Avoid common passwords
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end pt-6">
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="px-6 py-2.5 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 transition-colors shadow-sm"
+                      >
+                        {loading ? 'Changing...' : 'Change Password'}
+                      </button>
+                    </div>
+                  </form>
+
+                  {/* Account Information */}
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                    <h4 className="text-md font-semibold text-gray-900 mb-4">Account Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-600">Account ID:</span>
+                        <p className="font-medium text-gray-900 mt-1">{currentUser._id || currentUser.id || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Account Created:</span>
+                        <p className="font-medium text-gray-900 mt-1">
+                          {currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString() : 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Last Updated:</span>
+                        <p className="font-medium text-gray-900 mt-1">
+                          {currentUser.updatedAt ? new Date(currentUser.updatedAt).toLocaleDateString() : 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Account Status:</span>
+                        <p className="mt-1">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Active
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

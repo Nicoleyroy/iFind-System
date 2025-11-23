@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldExclamationIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { ShieldExclamationIcon, CheckCircleIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { API_ENDPOINTS } from '../../utils/constants';
 import AdminSidebar from '../layout/AdminSidebar';
 
 const SuspendedUsers = () => {
   const [suspendedUsers, setSuspendedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchSuspendedUsers();
@@ -50,6 +51,16 @@ const SuspendedUsers = () => {
     });
   };
 
+  // Filter users based on search term
+  const filteredUsers = suspendedUsers.filter(user => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      user.name?.toLowerCase().includes(searchLower) ||
+      user.email?.toLowerCase().includes(searchLower) ||
+      user.role?.toLowerCase().includes(searchLower)
+    );
+  });
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar />
@@ -71,6 +82,20 @@ const SuspendedUsers = () => {
                 <p className="text-sm font-medium text-gray-600">Total Suspended Users</p>
                 <p className="text-3xl font-bold text-gray-900">{suspendedUsers.length}</p>
               </div>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+            <div className="relative">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by name, email, or role..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              />
             </div>
           </div>
 
@@ -100,29 +125,40 @@ const SuspendedUsers = () => {
                 <tbody className="divide-y divide-gray-200">
                   {loading ? (
                     <tr>
-                      <td colSpan="5" className="px-6 py-8 text-center">
-                        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-orange-500 border-r-transparent"></div>
+                      <td colSpan="6" className="px-6 py-8 text-center">
+                        <div className="flex items-center justify-center">
+                          <div className="text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+                            <p className="mt-4 text-gray-600">Loading suspended users...</p>
+                          </div>
+                        </div>
                       </td>
                     </tr>
-                  ) : suspendedUsers.length === 0 ? (
+                  ) : filteredUsers.length === 0 ? (
                     <tr>
                       <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
-                        No suspended users
+                        {searchTerm ? 'No users found matching your search' : 'No suspended users'}
                       </td>
                     </tr>
                   ) : (
-                    suspendedUsers.map((user) => (
+                    filteredUsers.map((user) => (
                       <tr key={user._id || user.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white font-semibold">
-                              {(user.firstName?.[0] || user.email?.[0] || 'U').toUpperCase()}
-                            </div>
+                            {user.profilePicture ? (
+                              <img
+                                src={user.profilePicture}
+                                alt={user.name}
+                                className="h-10 w-10 rounded-full object-cover border-2 border-gray-200"
+                              />
+                            ) : (
+                              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white font-semibold">
+                                {(user.name?.[0] || user.email?.[0] || 'U').toUpperCase()}
+                              </div>
+                            )}
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900">
-                                {user.firstName || user.lastName
-                                  ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
-                                  : 'No name'}
+                                {user.name || user.email || 'No name'}
                               </div>
                             </div>
                           </div>

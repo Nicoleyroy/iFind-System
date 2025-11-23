@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from "../layout/navbar";
+import { uploadToCloudinary } from '../../utils/cloudinary';
 import { API_ENDPOINTS } from '../../utils/constants';
 
 const FoundItems = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('All');
   const [items, setItems] = useState([]);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [userClaims, setUserClaims] = useState([]); // Array of user's claim requests
   const [claimModal, setClaimModal] = useState(null); // { itemId, itemName }
   const [proofOfOwnership, setProofOfOwnership] = useState('');
+  const [claimImage, setClaimImage] = useState(null); // optional image file for claim
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -67,6 +70,11 @@ const FoundItems = () => {
 
   // Filter items based on search and exclude deleted/archived items
   const filtered = items.filter(item => {
+    // Exclude items without valid user (orphaned posts)
+    if (!item.userId) {
+      return false;
+    }
+    
     // Exclude deleted, archived, and claimed items from user view
     if (item.status === 'Deleted' || item.status === 'Archived' || item.status === 'Claimed') {
       return false;
@@ -76,7 +84,9 @@ const FoundItems = () => {
                          item.description?.toLowerCase().includes(search.toLowerCase()) ||
                          item.location?.toLowerCase().includes(search.toLowerCase());
     
-    return matchesSearch;
+    const matchesCategory = categoryFilter === 'All' || item.category === categoryFilter;
+    
+    return matchesSearch && matchesCategory;
   });
 
   // Check if user has a pending claim for an item
@@ -105,6 +115,7 @@ const FoundItems = () => {
     
     setClaimModal({ itemId: item.id || item._id, itemName: item.name });
     setProofOfOwnership('');
+    setClaimImage(null);
     setError('');
     setSuccess('');
   };
@@ -118,12 +129,26 @@ const FoundItems = () => {
     setSuccess('');
 
     try {
+      // If an image file was selected, upload to Cloudinary first
+      let imageUrl = '';
+      if (claimImage) {
+        try {
+          imageUrl = await uploadToCloudinary(claimImage);
+        } catch (uploadErr) {
+          console.error('Image upload failed:', uploadErr);
+          // Show the real error message to the user and stop submission
+          setError(uploadErr.message || 'Failed to upload image. Please try again.');
+          setLoading(false);
+          return;
+        }
+      }
       const res = await fetch(API_ENDPOINTS.CLAIM_FOUND_ITEM(claimModal.itemId), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           claimantId: currentUserId,
           proofOfOwnership: proofOfOwnership,
+          imageUrl,
         }),
       });
 
@@ -135,6 +160,7 @@ const FoundItems = () => {
       setSuccess('Claim request submitted successfully! A moderator will review your request.');
       setClaimModal(null);
       setProofOfOwnership('');
+      setClaimImage(null);
       
       // Reload items and user claims to update status
       const itemsRes = await fetch(API_ENDPOINTS.FOUND_ITEMS);
@@ -173,25 +199,27 @@ const FoundItems = () => {
     <>
       <Navbar />
       
-      <main className="min-h-screen bg-gradient-to-br from-orange-50 via-orange-100/30 to-orange-200/40">
-        {/* Hero Section */}
-        <div className="bg-gradient-to-r from-orange-500 to-orange-400 shadow-lg">
-          <div className="max-w-7xl mx-auto px-4 py-12 sm:px- lg:px-8">
-            <div className="text-center">
-              <h1 className="text-4xl font-bold text-white mb-3 tracking-tight">
-                Found Items Directory
+      <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50/30 px-4 py-12 sm:px-6 lg:px-8">
+        {/* Header Section */}
+        <header className="max-w-7xl mx-auto mb-12">
+          {/* Title with decorative element */}
+          <div className="flex items-center gap-4 mb-8">
+            <div className="flex-shrink-0">
+              <div className="w-1.5 h-12 bg-gradient-to-b from-orange-500 to-orange-600 rounded-full"></div>
+            </div>
+            <div>
+              <h1 className="text-[#134252] text-4xl font-bold tracking-tight">
+                Found Items
               </h1>
-              <p className="text-orange-50 text-lg max-w-2xl mx-auto">
-                Browse through items that have been found and claim what belongs to you
+              <p className="text-[#626C71] text-sm mt-1">
+                Browse items that have been found and claim what belongs to you
               </p>
             </div>
           </div>
-        </div>
 
-        {/* Success/Error Messages */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Success/Error Messages */}
           {success && (
-            <div className="mt-6 p-4 bg-green-50 border-l-4 border-green-500 text-green-700 rounded-r-lg shadow-sm flex items-start gap-3">
+            <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-500 text-green-700 rounded-r-xl shadow-md flex items-start gap-3">
               <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
               </svg>
@@ -199,196 +227,277 @@ const FoundItems = () => {
             </div>
           )}
           {error && (
-            <div className="mt-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-lg shadow-sm flex items-start gap-3">
+            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl shadow-md flex items-start gap-3">
               <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
               </svg>
               <span className="text-sm font-medium">{error}</span>
             </div>
           )}
-        </div>
-
-        {/* Filter and Search Section */}
-        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-xl shadow-md p-6 mb-8">
-            <div className="flex flex-col lg:flex-row gap-4 items-center">
-              {/* Search Bar */}
-              <div className="w-full lg:flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Search Items
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                  <input
-                    type="text"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                    placeholder="Search by name, description, or location..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Category Filter Buttons */}
-              <div className="w-full lg:w-auto">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category
-                </label>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => navigate('/found')}
-                    className="flex-1 lg:w-32 px-4 py-3 rounded-lg font-semibold text-sm transition-all bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
+  
+          <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center">
+            {/* Search Bar - Enhanced */}
+            <div className="flex-1 max-w-2xl">
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <svg 
+                    className="h-5 w-5 text-orange-500 group-focus-within:text-orange-600 transition-colors" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
                   >
-                    Found
-                  </button>
-                  <button
-                    onClick={() => navigate('/lost')}
-                    className="flex-1 lg:w-32 px-4 py-3 rounded-lg font-semibold text-sm transition-all bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-300 shadow-sm hover:shadow-md"
-                  >
-                    Lost
-                  </button>
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+                    />
+                  </svg>
                 </div>
+                <input
+                  type="text"
+                  className="w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl 
+                           bg-white text-[#134252] placeholder-[#626C71]/50 text-sm
+                           focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500
+                           transition-all shadow-sm hover:shadow-md"
+                  placeholder="Search by item name, description, or location..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
               </div>
             </div>
+
+            {/* Filter Buttons - Modern Pills */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigate('/found')}
+                className="flex-1 lg:flex-none lg:w-36 px-6 py-3.5 rounded-xl font-semibold text-sm 
+                         transition-all duration-200 bg-gradient-to-r from-blue-700 to-blue-800 
+                         text-white shadow-lg shadow-blue-700/30 hover:shadow-xl hover:shadow-blue-700/40
+                         hover:from-blue-800 hover:to-blue-900 active:scale-95"
+              >
+                Found Items
+              </button>
+              <button
+                onClick={() => navigate('/lost')}
+                className="flex-1 lg:flex-none lg:w-36 px-6 py-3.5 rounded-xl font-semibold text-sm 
+                         transition-all duration-200 bg-white text-[#134252] hover:bg-gray-50 
+                         border-2 border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md
+                         active:scale-95"
+              >
+                Lost Items
+              </button>
+            </div>
           </div>
-        </div>
 
-
+          {/* Category Filters */}
+          <div className="mt-6">
+            <label className="block text-sm font-semibold text-[#134252] mb-3">Filter by Category</label>
+            <div className="flex flex-wrap gap-2">
+              {['All', 'Electronics', 'Personal Items', 'Bags & Wallets', 'Keys', 'Clothing', 'Accessories', 'Books & Documents', 'Sports Equipment', 'Jewelry', 'Other'].map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setCategoryFilter(category)}
+                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                    categoryFilter === category
+                      ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30'
+                      : 'bg-white text-[#134252] border border-gray-200 hover:border-orange-300 hover:bg-orange-50'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          </div>
+        </header>
         {/* Items Grid */}
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Stats Bar */}
+          <div className="mb-6 flex items-center justify-between">
+            <p className="text-[#626C71] text-sm">
+              {filtered.length === 0 ? 'No items found' : `Showing ${filtered.length} ${filtered.length === 1 ? 'item' : 'items'}`}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filtered.length === 0 ? (
-              <div className="col-span-full text-center py-16">
-                <svg 
-                  className="mx-auto h-16 w-16 text-[#626C71]/40 mb-4" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={1.5} 
-                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" 
-                  />
-                </svg>
-                <p className="text-gray-900 text-lg font-medium mb-2">No items found</p>
-                <p className="text-gray-600 text-sm">
-                  {search ? 'Try adjusting your search terms' : 'No items have been reported yet'}
-                </p>
+              <div className="col-span-full">
+                <div className="max-w-md mx-auto text-center py-20">
+                  {/* Empty State Illustration */}
+                  <div className="mb-6 relative">
+                    <div className="w-24 h-24 mx-auto bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center">
+                      <svg 
+                        className="w-12 h-12 text-orange-500" 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        stroke="currentColor"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth={1.5} 
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" 
+                        />
+                      </svg>
+                    </div>
+                    <div className="absolute inset-0 bg-orange-400/20 blur-3xl -z-10 rounded-full"></div>
+                  </div>
+                  <h3 className="text-[#134252] text-xl font-bold mb-2">No items found</h3>
+                  <p className="text-[#626C71] text-sm leading-relaxed">
+                    {search ? 'Try adjusting your search terms or clearing filters' : 'No found items have been reported yet'}
+                  </p>
+                </div>
               </div>
             ) : (
               filtered.map((item) => (
                 <div
                   key={item.id || item._id}
-                  className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md 
-                           transition-all duration-200 flex flex-col"
+                  className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl 
+                           transition-all duration-300 flex flex-col border border-gray-100
+                           hover:border-orange-200 hover:-translate-y-1"
                 >
-                  {/* User Profile Header */}
-                  <div className="p-2.5 border-b border-gray-100">
-                    <div className="flex items-center gap-2">
+                  {/* User Profile Header - Enhanced */}
+                  <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
+                    <div className="flex items-center gap-3">
                       {item.userId?.profilePicture ? (
                         <img
                           src={item.userId.profilePicture}
                           alt={item.userId.name}
-                          className="w-7 h-7 rounded-full object-cover"
+                          className="w-9 h-9 rounded-full object-cover ring-2 ring-white shadow-md"
                         />
                       ) : (
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-500 to-orange-400 flex items-center justify-center text-white text-xs font-semibold">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-sm font-bold shadow-md ring-2 ring-white">
                           {item.userId?.name ? item.userId.name.substring(0, 2).toUpperCase() : 'U'}
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium text-gray-900 truncate">
+                        <p className="text-sm font-semibold text-[#134252] truncate">
                           {item.userId?.name || 'Unknown User'}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Item Image */}
-                  <div className="aspect-[4/3] bg-gray-100 overflow-hidden">
+                  {/* Item Image - Enhanced */}
+                  <div className="relative aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
                     {item.imageUrl ? (
                       <img 
                         src={item.imageUrl} 
                         alt={item.name} 
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" 
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
                       />
                     ) : (
-                      <div className="flex items-center justify-center w-full h-full text-[#626C71]/40">
-                        <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round" 
-                            strokeWidth={1.5} 
-                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" 
-                          />
-                        </svg>
+                      <div className="flex items-center justify-center w-full h-full">
+                        <div className="text-center">
+                          <svg className="w-16 h-16 mx-auto text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              strokeWidth={1.5} 
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" 
+                            />
+                          </svg>
+                          <p className="text-xs text-gray-400">No image</p>
+                        </div>
                       </div>
                     )}
+                    {/* Status Badge Overlay */}
+                    <div className="absolute top-3 right-3">
+                      <span
+                        className={`inline-block px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm shadow-lg ${
+                          item.status === 'Pending'
+                            ? 'bg-yellow-500/90 text-white'
+                            : item.status === 'Claimed'
+                            ? 'bg-green-500/90 text-white'
+                            : 'bg-orange-500/90 text-white'
+                        }`}
+                      >
+                        {item.status || 'Available'}
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Item Details */}
-                  <div className="p-3 flex flex-col flex-grow">
-                    {/* Title and Date */}
-                    <div className="flex justify-between items-start mb-1.5">
-                      <h3 className="text-gray-900 font-semibold text-sm flex-1">
-                        {item.name}
-                      </h3>
-                      <span className="text-gray-500 text-xs whitespace-nowrap ml-2">
+                  {/* Item Details - Enhanced */}
+                  <div className="p-4 flex flex-col grow">
+                    {/* Title */}
+                    <h3 className="text-[#134252] font-bold text-base mb-2 line-clamp-1 group-hover:text-orange-600 transition-colors">
+                      {item.name}
+                    </h3>
+
+                    {/* Location with Icon */}
+                    <div className="flex items-start gap-2 mb-3">
+                      <svg className="w-4 h-4 text-orange-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <p className="text-[#626C71] text-xs line-clamp-1">
+                        {item.location}
+                      </p>
+                    </div>
+
+                    {/* Date with Icon */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <svg className="w-4 h-4 text-orange-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <span className="text-[#626C71] text-xs">
                         {item.date ? new Date(item.date).toLocaleDateString('en-US', { 
                           month: 'short', 
-                          day: 'numeric' 
-                        }) : ''}
+                          day: 'numeric',
+                          year: 'numeric'
+                        }) : 'Date not available'}
                       </span>
                     </div>
 
-                    {/* Location */}
-                    <p className="text-gray-600 text-xs mb-1.5">
-                      {item.location}
-                    </p>
+                    {/* Category Badge */}
+                    {item.category && (
+                      <div className="mb-3">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-orange-100 text-orange-700 rounded-md text-xs font-medium">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                          </svg>
+                          {item.category}
+                        </span>
+                      </div>
+                    )}
 
                     {/* Description */}
-                    <p className="text-gray-700 text-xs mb-2 line-clamp-2 flex-grow">
+                    <p className="text-[#626C71] text-sm mb-4 line-clamp-2 grow leading-relaxed">
                       {item.description}
                     </p>
 
-                    {/* Status Badge */}
-                    <div className="mb-2">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                          item.status === 'Pending'
-                            ? 'bg-yellow-100 text-yellow-700'
-                            : item.status === 'Claimed'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-orange-100 text-orange-700'
-                        }`}
-                      >
-                        {item.status || 'Unclaimed'}
-                      </span>
-                    </div>
-
-                    {/* Action Buttons */}
+                    {/* Action Buttons - Enhanced */}
                     <div className="space-y-2">
                       <button
                         onClick={() => handleViewDetails(item)}
-                        className="w-full py-2 rounded-lg font-medium text-xs transition-all bg-gray-100 text-gray-700 hover:bg-gray-200 active:scale-95"
+                        className="w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200 
+                                 bg-gray-100 text-[#134252] hover:bg-gray-200 active:scale-95"
                       >
                         View Details
                       </button>
                       
-                      {hasPendingClaim(item.id || item._id) ? (
-                        <div className="w-full py-2 rounded-lg font-medium text-xs bg-yellow-100 text-yellow-700 text-center">
+                      {/* Show different states based on user relationship to item */}
+                      {String(item.userId?._id || item.userId?.id || item.userId) === String(currentUserId) ? (
+                        <button
+                          disabled
+                          className="w-full py-3 rounded-xl font-semibold text-sm
+                                   bg-gray-200 text-gray-500 cursor-not-allowed opacity-60"
+                          title="You cannot claim your own item"
+                        >
+                          Cannot Claim Own Item
+                        </button>
+                      ) : hasPendingClaim(item.id || item._id) ? (
+                        <div className="w-full py-3 rounded-xl font-semibold text-xs bg-yellow-100 text-yellow-700 text-center border-2 border-yellow-200">
                           Claim Request Pending
                         </div>
                       ) : (
                         <button
                           onClick={() => handleClaim(item)}
-                          className="w-full py-2 rounded-lg font-medium text-xs transition-all bg-gradient-to-r from-orange-500 to-orange-400 text-white hover:shadow-md active:scale-95 shadow-sm"
+                          className="w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200 
+                                   bg-gradient-to-r from-blue-700 to-blue-800 text-white 
+                                   shadow-md shadow-blue-700/30 hover:shadow-lg hover:shadow-blue-700/40
+                                   hover:from-blue-800 hover:to-blue-900 active:scale-95
+                                   group-hover:shadow-xl"
                         >
                           Claim Item
                         </button>
@@ -516,7 +625,7 @@ const FoundItems = () => {
                       handleCloseModal();
                       handleClaim(selectedItem);
                     }}
-                    className="flex-1 px-4 py-2 rounded-lg font-medium text-sm text-white bg-gradient-to-r from-orange-500 to-orange-400 hover:shadow-md transition-all"
+                    className="flex-1 px-4 py-2 rounded-lg font-medium text-sm text-white bg-gradient-to-r from-blue-700 to-blue-800 hover:shadow-md transition-all"
                   >
                     Claim This Item
                   </button>
@@ -551,6 +660,25 @@ const FoundItems = () => {
                 />
               </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">Optional image (photo)</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setClaimImage(e.target.files && e.target.files[0] ? e.target.files[0] : null)}
+                    className="w-full text-sm"
+                  />
+                  {claimImage && (
+                    <div className="mt-2">
+                      <img
+                        src={URL.createObjectURL(claimImage)}
+                        alt="preview"
+                        className="w-full h-36 object-cover rounded-md border border-gray-200"
+                      />
+                    </div>
+                  )}
+                </div>
+
               <div className="flex gap-2 justify-end pt-2">
                 <button
                   type="button"
@@ -567,8 +695,8 @@ const FoundItems = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`px-4 py-2 rounded-md text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-400 hover:shadow-md transition-all ${
-                    loading ? 'opacity-60 cursor-not-allowed' : ''
+                  className={`px-4 py-2 rounded-md text-sm font-medium text-white bg-gradient-to-r from-blue-700 to-blue-800 hover:shadow-md transition-all ${
+                    loading ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                 >
                   {loading ? 'Submitting...' : 'Submit Claim Request'}

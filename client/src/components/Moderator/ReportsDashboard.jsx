@@ -89,7 +89,7 @@ export default function ReportsDashboard() {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-700 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading analytics...</p>
         </div>
       </div>
@@ -186,7 +186,7 @@ export default function ReportsDashboard() {
       
       <div className="flex-1 ml-64">
         {/* Compact Header with Gradient */}
-        <div className="bg-gradient-to-r from-red-700 via-red-600 to-rose-600 text-white px-8 py-5">
+        <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white px-8 py-5">
           <div className="flex items-center justify-between">
             {/* Left: Title */}
             <div>
@@ -198,7 +198,7 @@ export default function ReportsDashboard() {
             <div className="flex items-center gap-4">
               <button 
                 onClick={handleExport}
-                className="flex items-center gap-2 px-5 py-2.5 bg-white text-red-700 rounded-xl font-semibold hover:bg-red-50 transition-all shadow-md text-sm"
+                className="flex items-center gap-2 px-5 py-2.5 bg-white text-orange-600 rounded-xl font-semibold hover:bg-orange-50 transition-all shadow-md text-sm"
               >
                 <Download className="w-4 h-4" />
                 Export Report
@@ -209,7 +209,7 @@ export default function ReportsDashboard() {
                   <p className="text-white text-sm font-semibold leading-tight">{user?.name || 'JOANNA NICOLE YROY'}</p>
                   <p className="text-white/70 text-xs">Moderator</p>
                 </div>
-                <div className="w-11 h-11 bg-red-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
+                <div className="w-11 h-11 bg-orange-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
                   <span className="text-white text-lg font-bold">
                     {user?.name ? user.name.charAt(0).toUpperCase() : 'J'}
                   </span>
@@ -272,7 +272,7 @@ export default function ReportsDashboard() {
                     setDateRange({ startDate: '', endDate: '' });
                     setStatusFilter('all');
                   }}
-                  className="px-4 py-2 text-red-600 hover:text-red-700 font-medium"
+                  className="px-4 py-2 text-orange-600 hover:text-orange-700 font-medium"
                 >
                   Clear Filters
                 </button>

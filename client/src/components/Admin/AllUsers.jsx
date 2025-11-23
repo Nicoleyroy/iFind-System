@@ -218,7 +218,12 @@ const AllUsers = () => {
                   {loading ? (
                     <tr>
                       <td colSpan="6" className="px-6 py-8 text-center">
-                        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-orange-500 border-r-transparent"></div>
+                        <div className="flex items-center justify-center">
+                          <div className="text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+                            <p className="mt-4 text-gray-600">Loading users...</p>
+                          </div>
+                        </div>
                       </td>
                     </tr>
                   ) : filteredUsers.length === 0 ? (
