@@ -360,34 +360,7 @@ export default function ReportsDashboard() {
 
           {/* Second Row Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Category Distribution */}
-            {Object.keys(analytics.itemsByCategory).length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-                <div className="flex items-center gap-2 mb-4">
-                  <Package className="w-5 h-5 text-gray-700" />
-                  <h2 className="text-lg font-bold text-gray-900">Claims by Item Category</h2>
-                </div>
-                <Bar 
-                  data={categoryData}
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: {
-                        display: false,
-                      },
-                    },
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        ticks: {
-                          precision: 0
-                        }
-                      }
-                    }
-                  }}
-                />
-              </div>
-            )}
+            {/* Category Distribution removed as requested */}
 
             {/* Moderator Workload */}
             {analytics.moderatorWorkload.length > 0 && (

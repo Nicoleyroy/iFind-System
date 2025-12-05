@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from "../layout/navbar";
 import { uploadToCloudinary } from '../../utils/cloudinary';
 import { API_ENDPOINTS } from '../../utils/constants';
+import { inputPrompt, inputTextarea, success as swalSuccess, error as swalError } from '../../utils/swal';
+import Swal from 'sweetalert2';
 
 const FoundItems = () => {
   const navigate = useNavigate();
@@ -18,6 +20,25 @@ const FoundItems = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [selectedItem, setSelectedItem] = useState(null); // For item details modal
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [contacting, setContacting] = useState(false);
+
+  // Helpers to mask contact info
+  const maskEmail = (email) => {
+    const [local = '', domain = ''] = (email || '').split('@');
+    const maskedLocal = local.length > 2 ? `${local[0]}***${local.slice(-1)}` : (local[0] ? `${local[0]}*` : '***');
+    const [domName = '', domTld = ''] = domain.split('.');
+    const maskedDom = domName && domName.length > 2 ? `${domName[0]}***${domName.slice(-1)}` : (domName ? `${domName[0]}*` : '***');
+    return `${maskedLocal}@${maskedDom}${domTld ? '.' + domTld : ''}`;
+  };
+
+  const maskPhone = (phone) => {
+    const digits = (phone || '').replace(/[^0-9+]/g, '');
+    if (digits.length <= 4) return '***';
+    const visible = digits.slice(-4);
+    const prefix = digits.slice(0, Math.max(0, digits.length - 8));
+    return `${prefix}***${visible}`;
+  };
 
   useEffect(() => {
     // Get current user from localStorage
@@ -75,8 +96,8 @@ const FoundItems = () => {
       return false;
     }
     
-    // Exclude deleted, archived, and claimed items from user view
-    if (item.status === 'Deleted' || item.status === 'Archived' || item.status === 'Claimed') {
+    // Exclude deleted, archived, claimed and returned items from user view
+    if (item.status === 'Deleted' || item.status === 'Archived' || item.status === 'Claimed' || item.status === 'Returned') {
       return false;
     }
     
@@ -189,10 +210,12 @@ const FoundItems = () => {
 
   const handleViewDetails = (item) => {
     setSelectedItem(item);
+    setSelectedImageIndex(0);
   };
 
   const handleCloseModal = () => {
     setSelectedItem(null);
+    setSelectedImageIndex(0);
   };
 
   return (
@@ -380,27 +403,33 @@ const FoundItems = () => {
 
                   {/* Item Image - Enhanced */}
                   <div className="relative aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
-                    {item.imageUrl ? (
-                      <img 
-                        src={item.imageUrl} 
-                        alt={item.name} 
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center w-full h-full">
-                        <div className="text-center">
-                          <svg className="w-16 h-16 mx-auto text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path 
-                              strokeLinecap="round" 
-                              strokeLinejoin="round" 
-                              strokeWidth={1.5} 
-                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" 
-                            />
-                          </svg>
-                          <p className="text-xs text-gray-400">No image</p>
+                    {(() => {
+                      const primaryImage = item.images && item.images.length > 0 ? item.images[0] : item.imageUrl;
+                      if (primaryImage) {
+                        return (
+                          <img
+                            src={primaryImage}
+                            alt={item.name}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                        );
+                      }
+                      return (
+                        <div className="flex items-center justify-center w-full h-full">
+                          <div className="text-center">
+                            <svg className="w-16 h-16 mx-auto text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path 
+                                strokeLinecap="round" 
+                                strokeLinejoin="round" 
+                                strokeWidth={1.5} 
+                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" 
+                              />
+                            </svg>
+                            <p className="text-xs text-gray-400">No image</p>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                     {/* Status Badge Overlay */}
                     <div className="absolute top-3 right-3">
                       <span
@@ -535,17 +564,35 @@ const FoundItems = () => {
             </div>
 
             {/* Modal Content */}
-            <div className="p-6">
+              <div className="p-6">
               {/* Item Image */}
-              {selectedItem.imageUrl && (
-                <div className="mb-6 rounded-lg overflow-hidden">
-                  <img 
-                    src={selectedItem.imageUrl} 
-                    alt={selectedItem.name}
-                    className="w-full h-64 object-cover"
-                  />
-                </div>
-              )}
+              {(() => {
+                const imgs = selectedItem.images && selectedItem.images.length > 0 ? selectedItem.images : (selectedItem.imageUrl ? [selectedItem.imageUrl] : []);
+                if (imgs.length === 0) return null;
+                return (
+                  <div className="mb-6 rounded-lg overflow-hidden">
+                    <img
+                      src={imgs[selectedImageIndex]}
+                      alt={selectedItem.name}
+                      className="w-full h-64 object-cover"
+                    />
+                    {imgs.length > 1 && (
+                      <div className="mt-2 flex gap-2 overflow-x-auto">
+                        {imgs.map((u, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setSelectedImageIndex(i)}
+                            className={`rounded-md overflow-hidden border ${i === selectedImageIndex ? 'border-orange-500' : 'border-gray-200'}`}
+                          >
+                            <img src={u} alt={`${selectedItem.name}-${i}`} className="w-20 h-14 object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Item Information */}
               <div className="space-y-4">
@@ -630,6 +677,101 @@ const FoundItems = () => {
                     Claim This Item
                   </button>
                 )}
+
+                {(() => {
+                  const info = selectedItem.contactInfo || '';
+                  const isEmail = info.includes('@');
+                  const isTel = /\d{6,}/.test(info);
+                  return (
+                    <div className="flex gap-2 w-full">
+                      {isTel && (
+                        <button
+                          onClick={() => {
+                            const tel = `tel:${info.replace(/[^0-9+]/g, '')}`;
+                            window.open(tel, '_self');
+                          }}
+                          className="flex-1 px-4 py-2 rounded-lg font-medium text-sm text-white bg-emerald-600 hover:bg-emerald-700 transition-colors"
+                        >
+                          Call Owner
+                        </button>
+                      )}
+                      {isEmail && (
+                        <button
+                          onClick={() => {
+                            const subject = encodeURIComponent(`Regarding your found item: ${selectedItem.name || ''}`);
+                            const body = encodeURIComponent(`Hi ${selectedItem.userId?.name || ''},\n\nI believe I found your item: ${selectedItem.name || ''}.\n\n`);
+                            window.location.href = `mailto:${info}?subject=${subject}&body=${body}`;
+                          }}
+                          className="flex-1 px-4 py-2 rounded-lg font-medium text-sm text-white bg-sky-600 hover:bg-sky-700 transition-colors"
+                        >
+                          Email Owner
+                        </button>
+                      )}
+                      
+                      <button
+                        onClick={async () => {
+                          if (!currentUserId) {
+                            swalError('Please log in', 'You must be logged in to contact the owner.');
+                            return;
+                          }
+                          // Quick contact modal: show masked contact and allow Call or Send Message
+                          const info = selectedItem.contactInfo || '';
+                          const maskedEmail = info.includes('@') ? maskEmail(info) : null;
+                          const maskedPhone = /\d{6,}/.test(info) ? maskPhone(info) : null;
+
+                          const html = `
+                            <div class="text-sm mb-3">
+                              ${maskedEmail ? `<div><strong>Email:</strong> ${maskedEmail}</div>` : ''}
+                              ${maskedPhone ? `<div><strong>Phone:</strong> ${maskedPhone}</div>` : ''}
+                            </div>
+                            <div class="text-xs text-gray-600">Choose "Send Message" to send a private message via iFind, or "Call" to open your phone app.</div>
+                          `;
+
+                          const result = await Swal.fire({
+                            title: 'Contact Owner',
+                            html,
+                            showCancelButton: true,
+                            showDenyButton: !!maskedPhone,
+                            confirmButtonText: 'Send Message',
+                            denyButtonText: 'Call',
+                            width: '520px',
+                          });
+
+                          if (result.isDenied) {
+                            const tel = `tel:${info.replace(/[^0-9+]/g, '')}`;
+                            window.open(tel, '_self');
+                            return;
+                          }
+
+                          if (!result.isConfirmed) return;
+
+                          const prefill = `I found your item: ${selectedItem.name || ''}.`;
+                          const message = await inputTextarea('Send Message', '', 'Write your message here', prefill);
+                          if (!message) return;
+                          setContacting(true);
+                          try {
+                            const res = await fetch(API_ENDPOINTS.CONTACT_ITEM(selectedItem._id || selectedItem.id), {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ message, senderId: currentUserId }),
+                            });
+                            const json = await res.json();
+                            if (!res.ok) throw new Error(json.message || 'Failed to send message');
+                            swalSuccess('Message sent', 'The owner has been notified');
+                          } catch (err) {
+                            swalError('Failed', err.message || 'Failed to send message');
+                          } finally {
+                            setContacting(false);
+                          }
+                        }}
+                        disabled={contacting}
+                        className={`flex-1 px-4 py-2 rounded-lg font-medium text-sm transition-all ${contacting ? 'opacity-60 cursor-not-allowed bg-orange-400 text-white' : 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:shadow-md'}`}
+                      >
+                        {contacting ? 'Sending...' : 'Send Message'}
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>

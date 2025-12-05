@@ -116,11 +116,14 @@ const changePassword = async (req, res) => {
         return res.status(400).json({ message: 'Current password is required' });
       }
       
-      if (user.password !== currentPassword) {
+      // Use bcrypt to compare current password
+      const isMatch = await user.comparePassword(currentPassword);
+      if (!isMatch) {
         return res.status(401).json({ message: 'Current password is incorrect' });
       }
     }
     
+    // Set new password - pre-save hook will hash it
     user.password = newPassword;
     await user.save();
     

@@ -7,6 +7,7 @@ import {
   CheckIcon,
 } from '@heroicons/react/24/outline';
 import { API_ENDPOINTS } from '../../utils/constants';
+import { confirm, success as swalSuccess, error as swalError } from '../../utils/swal';
 import AdminSidebar from '../layout/AdminSidebar';
 
 const Permission = () => {
@@ -93,7 +94,7 @@ const Permission = () => {
 
   const handleAssignRole = async () => {
     if (selectedUsers.length === 0) {
-      alert('Please select at least one user to assign role');
+      swalError('Validation', 'Please select at least one user to assign role');
       return;
     }
 
@@ -102,7 +103,8 @@ const Permission = () => {
       ? `Are you sure you want to assign this user as ${roleName}?${assignRole === 'admin' ? ' This will grant full system access.' : ''}`
       : `Are you sure you want to assign ${selectedUsers.length} users as ${roleName}?${assignRole === 'admin' ? ' This will grant full system access.' : ''}`;
 
-    if (!window.confirm(confirmMessage)) return;
+    const ok = await confirm('Confirm role assignment', confirmMessage);
+    if (!ok) return;
 
     setProcessing(true);
     let successCount = 0;
@@ -136,7 +138,7 @@ const Permission = () => {
       }
 
       if (successCount > 0) {
-        alert(
+        swalSuccess('Success',
           `Successfully assigned ${successCount} user(s) as ${roleName}.${
             failCount > 0 ? ` Failed to assign ${failCount} user(s).` : ''
           }\n\nThe action has been logged.`
@@ -146,11 +148,11 @@ const Permission = () => {
         setAssignRole('moderator');
         fetchUsers();
       } else {
-        alert('Failed to assign roles. Please try again.');
+        swalError('Error', 'Failed to assign roles. Please try again.');
       }
     } catch (error) {
       console.error('Error in bulk role assignment:', error);
-      alert(`Error: ${error.message}`);
+      swalError('Error', `Error: ${error.message}`);
     } finally {
       setProcessing(false);
     }
@@ -173,7 +175,7 @@ const Permission = () => {
       });
 
       if (response.ok) {
-        alert(
+        swalSuccess('Success',
           `Successfully revoked moderator privileges from ${selectedModerator.name || selectedModerator.email}.\n\nThe action has been logged.`
         );
         setShowRevokeModal(false);
@@ -182,11 +184,11 @@ const Permission = () => {
       } else {
         const data = await response.json();
         console.error('Failed to revoke moderator:', data);
-        alert(data.message || 'Failed to revoke moderator privileges');
+        swalError('Error', data.message || 'Failed to revoke moderator privileges');
       }
     } catch (error) {
       console.error('Error revoking moderator:', error);
-      alert(`Error: ${error.message}`);
+      swalError('Error', `Error: ${error.message}`);
     } finally {
       setProcessing(false);
     }

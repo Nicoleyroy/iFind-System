@@ -12,7 +12,17 @@ const NotificationSchema = new Schema(
     type: {
       type: String,
       enum: {
-        values: ['claim_approved', 'claim_rejected', 'item_claimed', 'new_claim_request', 'role_promotion', 'role_demotion', 'system'],
+        values: [
+          'claim_approved',
+          'claim_rejected',
+          'item_claimed',
+          'new_claim_request',
+          'contact_request',
+          'new_item',
+          'role_promotion',
+          'role_demotion',
+          'system',
+        ],
         message: 'Invalid notification type',
       },
       required: [true, 'Notification type is required'],
@@ -29,7 +39,12 @@ const NotificationSchema = new Schema(
     },
     relatedItemId: {
       type: Schema.Types.ObjectId,
-      ref: 'Item',
+      refPath: 'itemType',
+      required: false,
+    },
+    itemType: {
+      type: String,
+      enum: ['LostItem', 'FoundItem'],
       required: false,
     },
     relatedClaimId: {

@@ -3,10 +3,11 @@ import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuIt
 import { NavLink, useNavigate } from 'react-router-dom'
 import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { API_ENDPOINTS } from '../../utils/constants'
+import Swal from 'sweetalert2'
 const navigation = [
   { name: 'Home', href: '/lost', current: false },
-  { name: 'Report Items', href: '/report', current: false },
-  { name: 'Contact Us', href: '/contact', current: false },
+  { name: 'Report Items', href: '/report', current: false }
+  // { name: 'Contact Us', href: '/contact', current: false },
 
 ]
 const userNavigation = [
@@ -152,6 +153,22 @@ function Navbar() {
       return;
     }
 
+    // If this is a contact request, show the message in a popup for the owner
+    if (notification.type === 'contact_request') {
+      try {
+        const safe = escapeHtml(notification.message || '');
+        await Swal.fire({
+          title: notification.title || 'New message',
+          html: `<div style="white-space:pre-wrap;text-align:left">${safe}</div>`,
+          width: '600px',
+          confirmButtonText: 'Close',
+        });
+      } catch (e) {
+        console.warn('Failed to show contact message modal', e);
+      }
+      return;
+    }
+
     // Otherwise navigate to related item if available
     if (notification.relatedItemId) {
       navigate('/found');
@@ -191,6 +208,16 @@ function Navbar() {
       return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     }
     return name.substring(0, 2).toUpperCase();
+  };
+
+  const escapeHtml = (unsafe) => {
+    if (!unsafe) return '';
+    return String(unsafe)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   };
 
   return (

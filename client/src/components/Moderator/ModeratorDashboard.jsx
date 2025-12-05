@@ -34,6 +34,9 @@ const ModeratorDashboard = () => {
   const [recentClaims, setRecentClaims] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -42,6 +45,90 @@ const ModeratorDashboard = () => {
     const interval = setInterval(loadData, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    // load moderator notifications and unread count
+    const loadNotifications = async () => {
+      const userId = user?._id || user?.id;
+      if (!userId) return;
+      try {
+        const res = await fetch(`${API_ENDPOINTS.NOTIFICATIONS}?userId=${userId}`);
+        const json = await res.json();
+        if (Array.isArray(json.data)) setNotifications(json.data);
+      } catch (e) {
+        console.warn('Failed to load moderator notifications', e);
+      }
+    };
+
+    const loadUnread = async () => {
+      const userId = user?._id || user?.id;
+      if (!userId) return;
+      try {
+        const res = await fetch(`${API_ENDPOINTS.NOTIFICATIONS_UNREAD_COUNT}?userId=${userId}`);
+        const json = await res.json();
+        if (json.data && typeof json.data.count === 'number') setUnreadCount(json.data.count);
+      } catch (e) {
+        console.warn('Failed to load unread count', e);
+      }
+    };
+
+    loadNotifications();
+    loadUnread();
+
+    const iv = setInterval(() => { loadNotifications(); loadUnread(); }, 30000);
+    return () => clearInterval(iv);
+  }, [user]);
+
+  const handleNotificationClick = async (notification) => {
+    const userId = user?._id || user?.id;
+    if (!notification) return;
+    if (!notification.read) {
+      try {
+        await fetch(API_ENDPOINTS.NOTIFICATION_READ(notification._id), { method: 'PUT' });
+        // refresh
+        const res = await fetch(`${API_ENDPOINTS.NOTIFICATIONS}?userId=${userId}`);
+        const json = await res.json();
+        if (Array.isArray(json.data)) setNotifications(json.data);
+        const countRes = await fetch(`${API_ENDPOINTS.NOTIFICATIONS_UNREAD_COUNT}?userId=${userId}`);
+        const countJson = await countRes.json();
+        if (countJson.data && typeof countJson.data.count === 'number') setUnreadCount(countJson.data.count);
+      } catch (e) {
+        console.warn('Failed to mark notification read', e);
+      }
+    }
+
+    // navigate for claim related notifications
+    if (notification.relatedClaimId) {
+      navigate('/moderator/item-verification');
+      return;
+    }
+
+    if (notification.relatedItemId) {
+      navigate('/moderator/lost-items');
+      return;
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    const userId = user?._id || user?.id;
+    if (!userId) return;
+    try {
+      await fetch(API_ENDPOINTS.NOTIFICATIONS_READ_ALL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      // refresh
+      const res = await fetch(`${API_ENDPOINTS.NOTIFICATIONS}?userId=${userId}`);
+      const json = await res.json();
+      if (Array.isArray(json.data)) setNotifications(json.data);
+      const countRes = await fetch(`${API_ENDPOINTS.NOTIFICATIONS_UNREAD_COUNT}?userId=${userId}`);
+      const countJson = await countRes.json();
+      if (countJson.data && typeof countJson.data.count === 'number') setUnreadCount(countJson.data.count);
+    } catch (e) {
+      console.warn('Failed to mark all read', e);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -68,8 +155,8 @@ const ModeratorDashboard = () => {
         pendingClaims: claims.filter(c => c.status === 'Pending').length,
         approvedClaims: claims.filter(c => c.status === 'Approved').length,
         rejectedClaims: claims.filter(c => c.status === 'Rejected').length,
-        activeLost: lost.filter(item => item.status === 'active').length,
-        activeFound: found.filter(item => item.status === 'active').length,
+        activeLost: lost.filter(item => (item.status || 'Active') === 'Active').length,
+        activeFound: found.filter(item => (item.status || 'Active') === 'Active').length,
       });
 
       // Recent claims (latest 5)
@@ -111,13 +198,6 @@ const ModeratorDashboard = () => {
       color: "blue",
       link: "/moderator/reports-dashboard",
     },
-    {
-      title: "Manage Items",
-      description: `${stats.activeLost + stats.activeFound} active items`,
-      icon: <PackageSearch className="w-6 h-6" />,
-      color: "green",
-      link: "/moderator/lost-items",
-    },
   ];
 
   return (
@@ -128,26 +208,63 @@ const ModeratorDashboard = () => {
         {/* Compact Header with Gradient */}
         <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white px-8 py-5">
           <div className="flex items-center justify-between">
-            {/* Left: Title & Notification */}
+            {/* Left: Title */}
             <div className="flex items-center gap-6">
-              <div className="relative">
-                <button className="p-2.5 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-all">
-                  <Bell className="w-5 h-5 text-white" />
-                </button>
-                {stats.pendingClaims > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-600 rounded-full flex items-center justify-center text-xs font-bold border-2 border-white">
-                    {stats.pendingClaims > 9 ? '9+' : stats.pendingClaims}
-                  </span>
-                )}
-              </div>
               <div>
                 <h1 className="text-2xl font-bold">Moderator Dashboard</h1>
                 <p className="text-white/80 text-sm mt-0.5">Welcome back, {user?.name || 'Moderator'}</p>
               </div>
             </div>
 
-            {/* Right: Profile */}
+            {/* Right: Notifications + Profile */}
             <div className="flex items-center gap-3">
+              <div className="relative">
+                <button
+                  onClick={() => setShowNotifications(prev => !prev)}
+                  className="p-2.5 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-all relative"
+                >
+                  <Bell className="w-5 h-5 text-white" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-600 rounded-full flex items-center justify-center text-xs font-bold border-2 border-white">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {showNotifications && (
+                  <div className="absolute right-0 mt-3 w-96 z-50 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div className="p-3 border-b border-gray-100 flex items-center justify-between">
+                      <h3 className="text-sm font-bold">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <button onClick={handleMarkAllRead} className="text-xs text-orange-600 hover:text-orange-700">Mark all as read</button>
+                      )}
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="text-center p-6 text-gray-500">
+                          <Bell className="mx-auto h-10 w-10 text-gray-300" />
+                          <p className="mt-3">No notifications</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 p-3">
+                          {notifications.map(n => (
+                            <div
+                              key={n._id}
+                              onClick={() => { handleNotificationClick(n); setShowNotifications(false); }}
+                              className={`p-2 rounded-lg cursor-pointer ${n.read ? 'bg-gray-50 hover:bg-gray-100' : 'bg-blue-50 hover:bg-blue-100 border-l-4 border-blue-500'}`}
+                            >
+                              <p className={`text-sm font-semibold ${n.read ? 'text-gray-700' : 'text-gray-900'}`}>{n.title}</p>
+                              <p className="text-xs text-gray-600 mt-1 line-clamp-2">{n.message}</p>
+                              <p className="text-xs text-gray-400 mt-1">{new Date(n.createdAt).toLocaleString()}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="text-right">
                 <p className="text-white text-sm font-semibold leading-tight">{user?.name || 'JOANNA NICOLE YROY'}</p>
                 <p className="text-white/70 text-xs">Moderator</p>

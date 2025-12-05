@@ -12,6 +12,7 @@ import {
   KeyIcon,
 } from '@heroicons/react/24/outline';
 import AdminSidebar from '../layout/AdminSidebar';
+import { success as swalSuccess } from '../../utils/swal';
 
 const Security = () => {
   const [securityStatus, setSecurityStatus] = useState({
@@ -82,7 +83,7 @@ const Security = () => {
         },
       }));
       setProcessing(false);
-      alert('Backup completed successfully!');
+      swalSuccess('Backup completed', 'Backup completed successfully!');
     }, 3000);
   };
 

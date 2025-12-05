@@ -126,6 +126,7 @@ function ModeratorSettings() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [activeSection, setActiveSection] = useState('profile');
+  const [driveStatus, setDriveStatus] = useState({ connected: false });
 
   // Load user data from localStorage
   useEffect(() => {
@@ -214,6 +215,87 @@ function ModeratorSettings() {
   // Handle input changes
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // Google Drive helpers
+  const fetchDriveStatus = async () => {
+    try {
+      const res = await fetch('/api/backup/drive/status');
+      const json = await res.json();
+      setDriveStatus(json);
+    } catch (e) {
+      console.warn('Failed to fetch drive status', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchDriveStatus();
+  }, []);
+
+  const handleConnectDrive = () => {
+    // Open OAuth flow in new window/tab
+    window.open('/api/backup/drive/connect', '_blank', 'noopener,noreferrer');
+  };
+
+  const handleUploadToDrive = async () => {
+    setError('');
+    setSuccess('');
+    setLoading(true);
+    try {
+      // Create a backup first - use direct server URL to bypass Vite proxy timeout
+      const createRes = await fetch('http://localhost:4000/api/backup/create', { 
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      // Check if response is actually JSON
+      const contentType = createRes.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await createRes.text();
+        console.error('Non-JSON response:', text);
+        throw new Error('Server returned an invalid response. Please check server logs.');
+      }
+      
+      const createJson = await createRes.json();
+      if (!createRes.ok) throw new Error(createJson.message || 'Failed to create backup');
+      const fileName = createJson.backup.fileName;
+
+      // Upload to Drive - use direct server URL to bypass Vite proxy timeout
+      const uploadRes = await fetch('http://localhost:4000/api/backup/drive/upload', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName }),
+      });
+      
+      // Get the response text first to see what we're dealing with
+      const uploadText = await uploadRes.text();
+      console.log('Upload response text:', uploadText);
+      console.log('Upload response status:', uploadRes.status);
+      console.log('Upload response content-type:', uploadRes.headers.get('content-type'));
+      
+      // Try to parse as JSON
+      let uploadJson;
+      try {
+        uploadJson = JSON.parse(uploadText);
+      } catch (parseError) {
+        console.error('Failed to parse response as JSON:', parseError);
+        throw new Error('Server returned an invalid response: ' + uploadText);
+      }
+      
+      if (!uploadRes.ok) throw new Error(uploadJson.message || uploadJson.error || 'Failed to upload to Drive');
+
+      setSuccess('Backup uploaded to Google Drive successfully');
+      setTimeout(() => setSuccess(''), 4000);
+      fetchDriveStatus();
+    } catch (err) {
+      console.error('Drive upload error:', err);
+      setError(err.message || 'Drive upload failed');
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -345,6 +427,29 @@ function ModeratorSettings() {
               {activeSection === 'account' && (
                 <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
                   <h2 className="text-gray-900 text-2xl font-semibold mb-6">Account Management</h2>
+                  {/* Google Drive Backup Section */}
+                  <div className="mb-6">
+                    <h3 className="text-gray-900 text-lg font-semibold mb-3">Google Drive Backups</h3>
+                    <p className="text-sm text-gray-600 mb-3">Connect your Google Drive to upload backups directly from the dashboard.</p>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={handleConnectDrive}
+                        className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                      >
+                        {driveStatus && driveStatus.connected ? 'Reconnect Google Drive' : 'Connect Google Drive'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleUploadToDrive}
+                        disabled={!driveStatus || !driveStatus.connected || loading}
+                        className={`px-4 py-2 rounded-md text-white ${(!driveStatus || !driveStatus.connected || loading) ? 'bg-gray-400 cursor-not-allowed' : 'bg-orange-500 hover:bg-orange-600'}`}
+                      >
+                        {loading ? 'Uploading...' : 'Create & Upload Backup'}
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">Status: {driveStatus && driveStatus.connected ? 'Connected' : 'Not connected'}</p>
+                  </div>
                   {/* Account Information */}
                   <div className="mb-8">
                     <h3 className="text-gray-900 text-lg font-semibold mb-4">Account Information</h3>

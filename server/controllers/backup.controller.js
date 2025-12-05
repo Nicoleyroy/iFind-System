@@ -5,7 +5,6 @@ const { spawn } = require('child_process');
 
 // Models
 const User = require('../src/models/user');
-const Item = require('../src/models/item');
 const LostItem = require('../src/models/lostItem');
 const FoundItem = require('../src/models/foundItem');
 const ClaimRequest = require('../src/models/claimRequest');
@@ -35,9 +34,8 @@ exports.createBackup = async (req, res) => {
     const startTime = Date.now();
 
     // Fetch all data from collections
-    const [users, items, lostItems, foundItems, claimRequests, auditLogs] = await Promise.all([
+    const [users, lostItems, foundItems, claimRequests, auditLogs] = await Promise.all([
       User.find({}).lean(),
-      Item.find({}).lean(),
       LostItem.find({}).lean(),
       FoundItem.find({}).lean(),
       ClaimRequest.find({}).lean(),
@@ -54,7 +52,6 @@ exports.createBackup = async (req, res) => {
       },
       collections: {
         users,
-        items,
         lostItems,
         foundItems,
         claimRequests,
@@ -182,7 +179,6 @@ exports.restoreBackup = async (req, res) => {
     // Clear existing collections
     await Promise.all([
       User.deleteMany({}),
-      Item.deleteMany({}),
       LostItem.deleteMany({}),
       FoundItem.deleteMany({}),
       ClaimRequest.deleteMany({}),
@@ -193,7 +189,6 @@ exports.restoreBackup = async (req, res) => {
     const collections = backupData.collections;
     await Promise.all([
       collections.users?.length > 0 ? User.insertMany(collections.users) : Promise.resolve(),
-      collections.items?.length > 0 ? Item.insertMany(collections.items) : Promise.resolve(),
       collections.lostItems?.length > 0 ? LostItem.insertMany(collections.lostItems) : Promise.resolve(),
       collections.foundItems?.length > 0 ? FoundItem.insertMany(collections.foundItems) : Promise.resolve(),
       collections.claimRequests?.length > 0 ? ClaimRequest.insertMany(collections.claimRequests) : Promise.resolve(),

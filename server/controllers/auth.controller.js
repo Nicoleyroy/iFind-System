@@ -38,10 +38,22 @@ const login = async (req, res) => {
     return res.status(400).json({ message: 'Email and password required' });
   }
   try {
-    const user = await UserModel.findOne({ email, password });
+    const user = await UserModel.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
+    
+    // Check if user has a password (not Google-only account)
+    if (!user.password) {
+      return res.status(401).json({ message: 'Please login with Google' });
+    }
+    
+    // Compare password using bcrypt
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+    
     res.json({ message: 'Login successful', user });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });

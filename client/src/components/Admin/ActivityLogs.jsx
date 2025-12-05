@@ -17,6 +17,8 @@ const ActivityLogs = () => {
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('date'); // 'date', 'name', 'action'
+  const [sortOrder, setSortOrder] = useState('desc'); // 'asc', 'desc'
   const [stats, setStats] = useState({
     claim_approved: 0,
     claim_rejected: 0,
@@ -124,6 +126,21 @@ const ActivityLogs = () => {
           log.details.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      
+      if (sortBy === 'name') {
+        comparison = (a.userName || a.user).localeCompare(b.userName || b.user);
+      } else if (sortBy === 'action') {
+        comparison = a.action.localeCompare(b.action);
+      } else { // date
+        comparison = new Date(b.timestamp) - new Date(a.timestamp);
+      }
+      
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
 
     setFilteredLogs(filtered);
   };
@@ -262,7 +279,7 @@ const ActivityLogs = () => {
 
           {/* Filters */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div className="relative">
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
@@ -285,6 +302,38 @@ const ActivityLogs = () => {
                 <option value="system">System Events</option>
               </select>
             </div>
+            
+            {/* Sort Controls */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-sm font-medium text-gray-600">Sort by:</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setSortBy('date'); setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc'); }}
+                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                    sortBy === 'date' ? 'bg-orange-100 text-orange-700 font-medium' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Date {sortBy === 'date' && (sortOrder === 'desc' ? '↓' : '↑')}
+                </button>
+                <button
+                  onClick={() => { setSortBy('name'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}
+                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                    sortBy === 'name' ? 'bg-orange-100 text-orange-700 font-medium' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </button>
+                <button
+                  onClick={() => { setSortBy('action'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}
+                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                    sortBy === 'action' ? 'bg-orange-100 text-orange-700 font-medium' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Action {sortBy === 'action' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </button>
+              </div>
+            </div>
+            
             <p className="text-sm text-gray-600 mt-4">
               Showing {filteredLogs.length} of {logs.length} activity logs
             </p>

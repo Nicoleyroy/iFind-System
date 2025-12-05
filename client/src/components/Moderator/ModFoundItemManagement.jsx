@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 import ModSidebar from "../layout/ModSidebar";
 import { API_ENDPOINTS } from "../../utils/constants";
+import { confirm, success as swalSuccess, error as swalError } from '../../utils/swal';
+import { uploadToCloudinary } from '../../utils/cloudinary';
 
 const ModFoundItemManagement = () => {
   const [items, setItems] = useState([]);
@@ -28,8 +30,23 @@ const ModFoundItemManagement = () => {
     imageUrl: "",
     status: "Active"
   });
+  const [exporting, setExporting] = useState(false);
   
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  // Report Found Item modal state (moderator quick-report)
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [r_itemName, setRItemName] = useState("");
+  const [r_category, setRCategory] = useState("");
+  const [r_location, setRLocation] = useState("");
+  const [r_dateInfo, setRDateInfo] = useState("");
+  const [r_contactInfo, setRContactInfo] = useState("");
+  const [r_description, setRDescription] = useState("");
+  const [r_imageFiles, setRImageFiles] = useState([]);
+  const [r_previewIndex, setRPreviewIndex] = useState(0);
+  const [r_uploading, setRUploading] = useState(false);
+  const [r_error, setRError] = useState("");
+  const [r_success, setRSuccess] = useState("");
 
   useEffect(() => {
     fetchItems();
@@ -129,7 +146,7 @@ const ModFoundItemManagement = () => {
     e.preventDefault();
     
     if (!formData.name.trim()) {
-      alert("Item name is required");
+      swalError('Validation', 'Item name is required');
       return;
     }
 
@@ -153,21 +170,22 @@ const ModFoundItemManagement = () => {
       const data = await response.json();
       
       if (data.data) {
-        alert(`Item ${modalMode === "edit" ? "updated" : "added"} successfully!`);
+        swalSuccess('Success', `Item ${modalMode === "edit" ? "updated" : "added"} successfully!`);
         setShowModal(false);
         fetchItems();
         resetForm();
       } else {
-        alert(data.message || "Operation failed");
+        swalError('Error', data.message || "Operation failed");
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("An error occurred");
+      swalError('Error', 'An error occurred');
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this item?")) return;
+    const ok = await confirm('Delete item?', 'Are you sure you want to delete this item?');
+    if (!ok) return;
 
     try {
       const response = await fetch(`${API_ENDPOINTS.FOUND_ITEM_BY_ID(id)}/delete`, {
@@ -177,14 +195,14 @@ const ModFoundItemManagement = () => {
       const data = await response.json();
       
       if (data.data) {
-        alert("Item deleted successfully!");
+        swalSuccess('Deleted', 'Item deleted successfully!');
         fetchItems();
       } else {
-        alert(data.message || "Delete failed");
+        swalError('Error', data.message || "Delete failed");
       }
     } catch (error) {
       console.error("Error deleting item:", error);
-      alert("An error occurred");
+      swalError('Error', 'An error occurred');
     }
   };
 
@@ -199,14 +217,14 @@ const ModFoundItemManagement = () => {
       const data = await response.json();
       
       if (data.data) {
-        alert(`Item ${newStatus === 'Archived' ? 'archived' : 'restored'} successfully!`);
+        swalSuccess('Success', `Item ${newStatus === 'Archived' ? 'archived' : 'restored'} successfully!`);
         fetchItems();
       } else {
-        alert(data.message || "Status update failed");
+        swalError('Error', data.message || "Status update failed");
       }
     } catch (error) {
       console.error("Error updating status:", error);
-      alert("An error occurred while updating status");
+      swalError('Error', 'An error occurred while updating status');
     }
   };
 
@@ -224,11 +242,110 @@ const ModFoundItemManagement = () => {
     setSelectedItem(null);
   };
 
+  // Report Found Item handlers (moderator quick-report)
+  const handleRFileChange = (e) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    setRImageFiles(files);
+    setRPreviewIndex(0);
+  };
+
+  const handleReportSubmit = async (e) => {
+    e.preventDefault();
+    setRError("");
+    setRSuccess("");
+    let imageUrl = '';
+    let images = [];
+    setRUploading(true);
+    try {
+      if (r_imageFiles && r_imageFiles.length > 0) {
+        const uploadPromises = r_imageFiles.map(file => uploadToCloudinary(file));
+        images = await Promise.all(uploadPromises);
+        imageUrl = images[0] || '';
+      }
+
+      // current user id
+      let userId = null;
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          userId = user._id || user.id;
+        } catch (err) {
+          console.warn('Failed to parse user from localStorage', err);
+        }
+      }
+
+      const payload = {
+        name: r_itemName,
+        category: r_category,
+        location: r_location,
+        date: r_dateInfo,
+        contactInfo: r_contactInfo,
+        description: r_description,
+        imageUrl,
+        images,
+        userId,
+      };
+
+      const res = await fetch(API_ENDPOINTS.FOUND_ITEMS, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json && json.message ? json.message : 'Failed to submit');
+
+      setRSuccess('Found item reported successfully');
+      setShowReportModal(false);
+      // optionally refresh the list
+      fetchItems();
+    } catch (err) {
+      setRError(`Failed to submit: ${err.message}`);
+    } finally {
+      setRUploading(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    try {
+      setExporting(true);
+      const res = await fetch(`${API_ENDPOINTS.FOUND_ITEMS}/export-pdf`, {
+        method: 'POST',
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || 'Failed to export PDF');
+      }
+      const blob = await res.blob();
+      const disposition = res.headers.get('Content-Disposition') || res.headers.get('content-disposition');
+      let filename = 'Found-Items-Report.pdf';
+      if (disposition && disposition.includes('filename=')) {
+        const match = disposition.match(/filename="?([^";]+)"?/i);
+        if (match && match[1]) filename = match[1];
+      }
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      swalSuccess('Exported', 'PDF downloaded successfully.');
+    } catch (err) {
+      console.error('Export PDF error:', err);
+      swalError('Export failed', err.message || 'Unable to export PDF');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <ModSidebar />
-      
-      <div className="flex-1 ml-64">
+
+      <main className="flex-1 md:ml-64 overflow-y-auto">
         {/* Modern Header with Gradient */}
         <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white px-8 py-10">
           <div className="flex items-center justify-between mb-6">
@@ -237,11 +354,9 @@ const ModFoundItemManagement = () => {
               <button className="p-3 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-all">
                 <Bell className="w-6 h-6 text-white" />
               </button>
-             
             </div>
 
-            
-            {/* Right: Profile & Export Button */}
+            {/* Right: Profile */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
                 <div className="text-right">
@@ -261,19 +376,103 @@ const ModFoundItemManagement = () => {
               <h1 className="text-4xl font-bold mb-2">Found Items Management</h1>
               <p className="text-red-100 text-lg">Manage and track all found items in the system</p>
             </div>
-            <button
-              onClick={() => {
-                setModalMode("add");
-                resetForm();
-                setShowModal(true);
-              }}
-              className="bg-white text-orange-600 px-6 py-3 rounded-xl font-semibold flex items-center gap-2 hover:bg-orange-50 transition-all shadow-lg hover:shadow-xl"
-            >
-              <Plus className="w-5 h-5" />
-              Add New Item
-            </button>
+            {/* Actions moved to the search bar line below */}
           </div>
         </div>
+
+        {/* Report Found Item Modal (moderator quick-report) */}
+        {showReportModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 py-10">
+            <div className="bg-white rounded-xl max-w-3xl w-full mx-4 p-6 shadow-2xl">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="text-xl font-bold">Report Found Item</h3>
+                  <p className="text-sm text-slate-500">Quick report for moderators (Found items only)</p>
+                </div>
+                <button onClick={() => setShowReportModal(false)} className="text-slate-500 hover:text-slate-700">Close</button>
+              </div>
+
+              {r_error && <div className="mb-3 p-3 bg-red-50 text-red-700 rounded">{r_error}</div>}
+              {r_success && <div className="mb-3 p-3 bg-green-50 text-green-700 rounded">{r_success}</div>}
+
+              <form onSubmit={handleReportSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="lg:col-span-1">
+                  <div className="aspect-[4/3] rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 text-3xl">
+                    {r_imageFiles && r_imageFiles.length > 0 ? (
+                      <img src={URL.createObjectURL(r_imageFiles[r_previewIndex])} alt="Photo" className="w-full h-full object-cover rounded-lg" />
+                    ) : (
+                      <span>400 × 300</span>
+                    )}
+                  </div>
+                  <label htmlFor="r-image-upload" className="mt-4 block">
+                    <input id="r-image-upload" type="file" accept="image/*" onChange={handleRFileChange} className="hidden" multiple />
+                    <div className="mt-4 w-full text-center bg-green-50 text-green-600 hover:bg-green-100 transition rounded-md py-2 cursor-pointer">Upload Photo</div>
+                  </label>
+                  {r_imageFiles && r_imageFiles.length > 1 && (
+                    <div className="mt-3 flex gap-2 overflow-x-auto">
+                      {r_imageFiles.map((f, idx) => (
+                        <button key={idx} type="button" onClick={() => setRPreviewIndex(idx)} className={`w-16 h-12 rounded-md overflow-hidden border ${idx === r_previewIndex ? 'border-green-500' : 'border-gray-100'}`}>
+                          <img src={URL.createObjectURL(f)} alt={`thumb-${idx}`} className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="lg:col-span-2">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs text-[#626C71] mb-1">Item Name</label>
+                      <input type="text" placeholder="Name of the item..." value={r_itemName} onChange={(e) => setRItemName(e.target.value)} className="w-full rounded-md border bg-white px-3 py-2 text-sm focus:outline-none" />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-[#626C71] mb-1">Category</label>
+                      <select value={r_category} onChange={(e) => setRCategory(e.target.value)} className="w-full rounded-md border bg-white px-3 py-2 text-sm focus:outline-none">
+                        <option value="">Select a category...</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Personal Items">Personal Items</option>
+                        <option value="Bags & Wallets">Bags & Wallets</option>
+                        <option value="Keys">Keys</option>
+                        <option value="Clothing">Clothing</option>
+                        <option value="Accessories">Accessories</option>
+                        <option value="Books & Documents">Books & Documents</option>
+                        <option value="Sports Equipment">Sports Equipment</option>
+                        <option value="Jewelry">Jewelry</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-[#626C71] mb-1">Location</label>
+                      <input type="text" placeholder="Found location..." value={r_location} onChange={(e) => setRLocation(e.target.value)} className="w-full rounded-md border bg-white px-3 py-2 text-sm focus:outline-none" />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-[#626C71] mb-1">Date found</label>
+                      <input type="date" value={r_dateInfo} onChange={(e) => setRDateInfo(e.target.value)} className="w-full rounded-md border bg-white px-3 py-2 text-sm focus:outline-none" />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-[#626C71] mb-1">Contact Info</label>
+                      <input type="text" placeholder="Contact number, email, etc..." value={r_contactInfo} onChange={(e) => setRContactInfo(e.target.value)} className="w-full rounded-md border bg-white px-3 py-2 text-sm focus:outline-none" />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-[#626C71] mb-1">Item Description</label>
+                      <textarea rows={4} placeholder="Describe the item..." value={r_description} onChange={(e) => setRDescription(e.target.value)} className="w-full rounded-md border bg-white px-3 py-2 text-sm focus:outline-none" />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex justify-end gap-2">
+                    <button type="button" onClick={() => setShowReportModal(false)} className="px-4 py-2 rounded bg-gray-200">Cancel</button>
+                    <button type="submit" disabled={r_uploading} className={`px-4 py-2 rounded bg-green-600 text-white ${r_uploading ? 'opacity-60 cursor-not-allowed' : ''}`}>{r_uploading ? 'Submitting...' : 'Submit Report'}</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         <div className="px-8 py-6">
           {/* Stats Cards - Modern Design */}
@@ -360,13 +559,14 @@ const ModFoundItemManagement = () => {
               {/* Search and Filters */}
               <div className="flex flex-col md:flex-row gap-3 flex-1">
                 <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                   <input
-                    type="text"
-                    placeholder="Search by name, location, category..."
+                    type="search"
+                    placeholder="Search by name, location, or description..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent w-full transition-all"
+                    className="pl-12 pr-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition bg-white hover:border-slate-400 w-full"
+                    aria-label="Search items"
                   />
                 </div>
 
@@ -402,6 +602,27 @@ const ModFoundItemManagement = () => {
                     <option value="name">Name (A-Z)</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Actions on the same line as search */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleExportPdf}
+                  disabled={exporting}
+                  className={`px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-900`}
+                  title="Export PDF"
+                >
+                  <Download className="w-4 h-4" />
+                  {exporting ? 'Exporting…' : 'Export'}
+                </button>
+                <button
+                  onClick={() => setShowReportModal(true)}
+                  className="px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition font-medium flex items-center gap-2"
+                  title="Add New Item"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add New Item
+                </button>
               </div>
             </div>
 
@@ -491,7 +712,16 @@ const ModFoundItemManagement = () => {
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-700 font-medium">{item.category || "N/A"}</td>
                         <td className="px-6 py-4 text-sm text-gray-700">{item.location || "N/A"}</td>
-                        <td className="px-6 py-4 text-sm text-gray-700">{item.date ? new Date(item.date).toLocaleDateString() : "N/A"}</td>
+                        <td className="px-6 py-4 text-sm text-gray-700">
+                          {item.date || item.createdAt ? (
+                            <div className="flex flex-col">
+                              <span className="font-medium">{new Date(item.date || item.createdAt).toLocaleDateString()}</span>
+                              <span className="text-xs text-gray-500">{new Date(item.date || item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                          ) : (
+                            "N/A"
+                          )}
+                        </td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                             item.status === "Active" ? "bg-green-100 text-green-800" :
@@ -503,25 +733,17 @@ const ModFoundItemManagement = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-2">
-                            <button onClick={() => handleView(item)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="View">
-                              <Eye className="w-5 h-5 text-gray-600" />
-                            </button>
-                            <button onClick={() => handleEdit(item)} className="p-2 hover:bg-blue-100 rounded-lg transition-colors" title="Edit">
-                              <Edit className="w-5 h-5 text-blue-600" />
-                            </button>
                             <button onClick={() => handleDelete(item._id)} className="p-2 hover:bg-red-100 rounded-lg transition-colors" title="Delete">
                               <Trash2 className="w-5 h-5 text-red-600" />
                             </button>
-                            {item.status === "Active" && (
-                              <button onClick={() => handleStatusChange(item._id, "Archived")} className="p-2 hover:bg-yellow-100 rounded-lg transition-colors" title="Archive">
-                                <Archive className="w-5 h-5 text-yellow-600" />
-                              </button>
-                            )}
-                            {item.status === "Archived" && (
-                              <button onClick={() => handleStatusChange(item._id, "Active")} className="p-2 hover:bg-green-100 rounded-lg transition-colors" title="Restore">
-                                <RotateCcw className="w-5 h-5 text-green-600" />
-                              </button>
-                            )}
+                            <button
+                              onClick={() => handleStatusChange(item._id, "Archived")}
+                              disabled={item.status === "Archived"}
+                              className={`p-2 rounded-lg transition-colors ${item.status === 'Archived' ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'hover:bg-yellow-100'}`}
+                              title="Archive"
+                            >
+                              <Archive className="w-5 h-5 text-yellow-600" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -532,7 +754,7 @@ const ModFoundItemManagement = () => {
             </div>
           )}
         </div>
-      </div>
+      </main>
 
       {/* Modal */}
       {showModal && (

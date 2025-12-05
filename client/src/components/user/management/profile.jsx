@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from "../../layout/navbar";
 import { API_ENDPOINTS } from '../../../utils/constants';
 import { uploadToCloudinary } from '../../../utils/cloudinary';
+import { confirm, success as swalSuccess, error as swalError } from '../../../utils/swal';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -15,6 +16,8 @@ const Profile = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [markingId, setMarkingId] = useState(null);
+  const [viewArchived, setViewArchived] = useState(false);
   
   // Edit form state
   const [editForm, setEditForm] = useState({
@@ -82,6 +85,8 @@ const Profile = () => {
     
     return matchesUser && matchesSearch;
   });
+
+  const displayedItems = filtered.filter(item => viewArchived ? item.status === 'Archived' : item.status !== 'Archived');
 
   const getInitials = (name) => {
     if (!name) return 'U';
@@ -191,6 +196,121 @@ const Profile = () => {
     }
   };
 
+  const handleMarkReturned = async (item) => {
+    if (!user) return;
+    const currentUserId = user._id || user.id;
+    const ownerId = item.userId?._id || item.userId?.id || item.userId;
+    if (!currentUserId || String(currentUserId) !== String(ownerId)) {
+      setError('Only the owner can mark this item as returned.');
+      setTimeout(() => setError(''), 4000);
+      return;
+    }
+
+    const ok = await confirm('Mark this lost item as Returned?', 'This will update the post status.');
+    if (!ok) return;
+
+    setMarkingId(item._id || item.id);
+    setError('');
+    setLoading(true);
+    try {
+      const endpoint = item.type === 'lost' ? API_ENDPOINTS.LOST_ITEM_BY_ID(item._id || item.id) : API_ENDPOINTS.FOUND_ITEM_BY_ID(item._id || item.id);
+      const res = await fetch(endpoint, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Returned' }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to update item');
+
+      const updated = json.data;
+      setItems(prev => prev.map(it => (String(it._id || it.id) === String(updated._id || updated.id) ? updated : it)));
+      setSuccess('Item marked as Returned');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.message || 'Failed to mark returned');
+      setTimeout(() => setError(''), 4000);
+    } finally {
+      setMarkingId(null);
+      setLoading(false);
+    }
+  };
+
+  const handleArchive = async (item) => {
+    if (!user) return;
+    const currentUserId = user._id || user.id;
+    const ownerId = item.userId?._id || item.userId?.id || item.userId;
+    if (!currentUserId || String(currentUserId) !== String(ownerId)) {
+      setError('Only the owner can archive this item.');
+      setTimeout(() => setError(''), 4000);
+      return;
+    }
+
+    const ok = await confirm('Archive this post?', 'Archived posts will be hidden from public listings.');
+    if (!ok) return;
+
+    setMarkingId(item._id || item.id);
+    setLoading(true);
+    try {
+      const endpoint = item.type === 'lost' ? API_ENDPOINTS.LOST_ITEM_BY_ID(item._id || item.id) : API_ENDPOINTS.FOUND_ITEM_BY_ID(item._id || item.id);
+      const res = await fetch(endpoint, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Archived' }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to archive item');
+
+      const updated = json.data;
+      setItems(prev => prev.map(it => (String(it._id || it.id) === String(updated._id || updated.id) ? updated : it)));
+      setSuccess('Item archived');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.message || 'Failed to archive');
+      setTimeout(() => setError(''), 4000);
+    } finally {
+      setMarkingId(null);
+      setLoading(false);
+    }
+  };
+
+  const handleRestore = async (item) => {
+    if (!user) return;
+    const currentUserId = user._id || user.id;
+    const ownerId = item.userId?._id || item.userId?.id || item.userId;
+    if (!currentUserId || String(currentUserId) !== String(ownerId)) {
+      setError('Only the owner can restore this item.');
+      setTimeout(() => setError(''), 4000);
+      return;
+    }
+
+    const ok = await confirm('Restore this archived post?', 'This will make the post visible publicly again.');
+    if (!ok) return;
+
+    setMarkingId(item._id || item.id);
+    setLoading(true);
+    try {
+      const endpoint = item.type === 'lost' ? API_ENDPOINTS.LOST_ITEM_BY_ID(item._id || item.id) : API_ENDPOINTS.FOUND_ITEM_BY_ID(item._id || item.id);
+      const res = await fetch(endpoint, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Active' }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Failed to restore item');
+
+      const updated = json.data;
+      setItems(prev => prev.map(it => (String(it._id || it.id) === String(updated._id || updated.id) ? updated : it)));
+      setSuccess('Item restored');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.message || 'Failed to restore');
+      setTimeout(() => setError(''), 4000);
+    } finally {
+      setMarkingId(null);
+      setLoading(false);
+    }
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     setImageFile(file ?? null);
@@ -245,7 +365,7 @@ const Profile = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
             <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg shadow-sm">
               <div className="flex items-center">
-                <svg className="w-5 h-5 text-orange-500 mr-3" fill="currentColor" viewBox="0 0 20 20">0">
+                <svg className="w-5 h-5 text-orange-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
                 <p className="text-orange-800 font-medium">{error}</p>
@@ -352,7 +472,7 @@ const Profile = () => {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Total Posts</p>
-                      <p className="text-sm text-gray-900 font-medium">{filtered.length} {filtered.length === 1 ? 'Item' : 'Items'}</p>
+                      <p className="text-sm text-gray-900 font-medium">{displayedItems.length} {displayedItems.length === 1 ? 'Item' : 'Items'}</p>
                     </div>
                   </div>
                 </div>
@@ -367,8 +487,28 @@ const Profile = () => {
           <div className="mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">My Posts</h2>
-                <p className="text-sm text-gray-600 mt-1">Manage and track your lost and found items</p>
+                <div className="flex items-center gap-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">{viewArchived ? 'Archived Posts' : 'My Posts'}</h2>
+                    <p className="text-sm text-gray-600 mt-1">Manage and track your lost and found items</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setViewArchived(false)}
+                    className={`px-3 py-1 rounded-md text-sm font-medium ${!viewArchived ? 'bg-orange-500 text-white' : 'bg-white border border-gray-200 text-gray-700'}`}
+                  >
+                    My Posts
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewArchived(true)}
+                    className={`px-3 py-1 rounded-md text-sm font-medium ${viewArchived ? 'bg-gray-800 text-white' : 'bg-white border border-gray-200 text-gray-700'}`}
+                  >
+                    Archived
+                  </button>
+                </div>
               </div>
               <div className="relative w-full sm:w-80">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -389,7 +529,7 @@ const Profile = () => {
 
           {/* Posts Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filtered.length === 0 ? (
+            {displayedItems.length === 0 ? (
               <div className="col-span-full">
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-16 text-center">
                   <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -404,7 +544,7 @@ const Profile = () => {
                 </div>
               </div>
             ) : (
-              filtered.map((item) => (
+              displayedItems.map((item) => (
                 <div
                   key={item.id || item._id}
                   className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg hover:border-gray-300 transition-all duration-200 flex flex-col"
@@ -466,6 +606,35 @@ const Profile = () => {
                               </svg>
                               <span className="font-medium">Edit Post</span>
                             </button>
+                              {item.status !== 'Archived' ? (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleArchive(item);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                                >
+                                  <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v13a2 2 0 002 2h14a2 2 0 002-2V7M3 7l9-4 9 4" />
+                                  </svg>
+                                  <span className="font-medium">Archive Post</span>
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRestore(item);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="w-full text-left px-4 py-2.5 text-sm text-green-600 hover:bg-green-50 flex items-center gap-3 transition-colors"
+                                >
+                                  <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v13a2 2 0 002 2h14a2 2 0 002-2V7M16 3l-4 4-4-4" />
+                                  </svg>
+                                  <span className="font-medium">Restore Post</span>
+                                </button>
+                              )}
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -515,21 +684,34 @@ const Profile = () => {
                     )}
                     
                     {/* Footer - Status & Type */}
-                    <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
-                          item.status === 'Pending'
-                            ? 'bg-amber-100 text-amber-800'
-                            : item.status === 'Claimed'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-orange-100 text-orange-800'
-                        }`}
-                      >
-                        {item.status || 'Unclaimed'}
-                      </span>
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 capitalize">
-                        {item.type}
-                      </span>
+                    <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100 gap-3">
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            item.status === 'Pending'
+                              ? 'bg-amber-100 text-amber-800'
+                              : item.status === 'Claimed' || item.status === 'Returned'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-orange-100 text-orange-800'
+                          }`}
+                        >
+                          {item.status || 'Unclaimed'}
+                        </span>
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 capitalize">
+                          {item.type}
+                        </span>
+                      </div>
+
+                      {/* Mark Returned button: only show for lost items and only for the owner */}
+                      {item.type === 'lost' && (user && (user._id || user.id) === (item.userId?._id || item.userId?.id || item.userId)) && item.status !== 'Returned' && (
+                        <button
+                          onClick={() => handleMarkReturned(item)}
+                          disabled={loading && markingId === (item._id || item.id)}
+                          className={`px-3 py-1 rounded-md text-sm font-medium text-white ${markingId === (item._id || item.id) ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
+                        >
+                          {markingId === (item._id || item.id) ? 'Updating...' : 'Mark Returned'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -609,14 +791,11 @@ const Profile = () => {
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Type</label>
-                  <select
-                    value={editForm.type}
-                    onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-shadow"
-                  >
-                    <option value="lost">Lost</option>
-                    <option value="found">Found</option>
-                  </select>
+                  <div className="mt-1">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-800">
+                      {editForm.type === 'lost' ? 'Lost' : 'Found'}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="md:col-span-2">

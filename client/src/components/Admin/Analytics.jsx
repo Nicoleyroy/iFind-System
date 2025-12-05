@@ -239,21 +239,27 @@ const Analytics = () => {
               ) : analytics.activityByDay.length === 0 ? (
                 <p className="text-center text-gray-500 py-8">No activity data available</p>
               ) : (
-                <div className="flex items-end justify-between h-64 gap-2">
-                  {analytics.activityByDay.map((item, index) => {
-                    const maxActivity = Math.max(...analytics.activityByDay.map(a => a.activity), 1);
-                    return (
-                      <div key={index} className="flex-1 flex flex-col items-center">
-                        <div 
-                          className="w-full bg-gradient-to-t from-orange-500 to-orange-300 rounded-t-lg transition-all duration-500 hover:opacity-80"
-                          style={{ height: `${(item.activity / maxActivity) * 100}%` }}
-                          title={`${item.activity} items`}
-                        ></div>
-                        <span className="text-xs text-gray-600 mt-2 font-medium">{item.day}</span>
-                        <span className="text-xs text-gray-400">{item.activity}</span>
-                      </div>
-                    );
-                  })}
+                <div className="space-y-2">
+                  <div className="flex items-end justify-between h-56 gap-3">
+                    {analytics.activityByDay.map((item, index) => {
+                      const maxActivity = Math.max(...analytics.activityByDay.map(a => a.activity), 1);
+                      const height = maxActivity > 0 ? (item.activity / maxActivity) * 100 : 0;
+                      return (
+                        <div key={index} className="flex-1 flex flex-col items-center gap-2">
+                          <div 
+                            className="w-full bg-gradient-to-t from-orange-500 to-orange-300 rounded-t-lg transition-all duration-500 hover:opacity-80 relative group cursor-pointer"
+                            style={{ height: `${Math.max(height, 5)}%`, minHeight: '20px' }}
+                          >
+                            <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-semibold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">
+                              {item.activity}
+                            </span>
+                          </div>
+                          <span className="text-xs text-gray-600 font-medium">{item.day}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-gray-500 text-center mt-4">Total items posted per day of the week</p>
                 </div>
               )}
             </div>

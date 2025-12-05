@@ -5,6 +5,7 @@ import {
   ChevronDown, ChevronUp, CheckCircle, XCircle, Bell, UserCircle, Trash2
 } from 'lucide-react';
 import { API_ENDPOINTS } from '../../utils/constants';
+import { confirm, success as swalSuccess, error as swalError } from '../../utils/swal';
 import ModSidebar from '../layout/ModSidebar';
 
 export default function ClaimTicketVerification() {
@@ -148,7 +149,7 @@ export default function ClaimTicketVerification() {
         );
         
         // Show success message
-        alert(`Claim ${status.toLowerCase()} successfully!`);
+        swalSuccess('Success', `Claim ${status.toLowerCase()} successfully!`);
         
         // Close modal
         setShowModal(false);
@@ -159,11 +160,11 @@ export default function ClaimTicketVerification() {
         // Refresh claims
         fetchClaims();
       } else {
-        alert(data.message || 'Failed to update claim');
+        swalError('Error', data.message || 'Failed to update claim');
       }
     } catch (error) {
       console.error('Error reviewing claim:', error);
-      alert('An error occurred while processing the claim');
+      swalError('Error', 'An error occurred while processing the claim');
     } finally {
       setProcessing(false);
     }
@@ -178,9 +179,8 @@ export default function ClaimTicketVerification() {
 
   const handleDeleteClaim = async (claimId) => {
     // Confirm deletion
-    if (!window.confirm('Are you sure you want to delete this claim? This action cannot be undone.')) {
-      return;
-    }
+    const ok = await confirm('Delete claim?', 'Are you sure you want to delete this claim? This action cannot be undone.');
+    if (!ok) return;
 
     try {
       setProcessing(true);
@@ -198,16 +198,16 @@ export default function ClaimTicketVerification() {
         setClaims(prevClaims => prevClaims.filter(claim => claim._id !== claimId));
         
         // Show success message
-        alert('Claim deleted successfully!');
+        swalSuccess('Deleted', 'Claim deleted successfully!');
         
         // Refresh claims to update stats
         fetchClaims();
       } else {
-        alert(data.message || 'Failed to delete claim');
+        swalError('Error', data.message || 'Failed to delete claim');
       }
     } catch (error) {
       console.error('Error deleting claim:', error);
-      alert('An error occurred while deleting the claim');
+      swalError('Error', 'An error occurred while deleting the claim');
     } finally {
       setProcessing(false);
     }

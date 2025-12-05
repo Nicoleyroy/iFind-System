@@ -1,8 +1,10 @@
 const FoundItemModel = require('../src/models/foundItem');
+const NotificationModel = require('../src/models/notification');
+const UserModel = require('../src/models/user');
 
 const createFoundItem = async (req, res) => {
   try {
-    const { name, category, location, date, contactInfo, description, imageUrl, userId } = req.body || {};
+    const { name, category, location, date, contactInfo, description, imageUrl, images, userId } = req.body || {};
     if (!name) {
       return res.status(400).json({ message: 'Item name is required' });
     }
@@ -11,6 +13,11 @@ const createFoundItem = async (req, res) => {
       const d = new Date(date);
       if (!isNaN(d.getTime())) parsedDate = d;
     }
+    // Normalize images: support either `images` array or single `imageUrl`
+    let imgs = [];
+    if (Array.isArray(images) && images.length > 0) imgs = images;
+    else if (imageUrl) imgs = [imageUrl];
+
     const item = await FoundItemModel.create({
       name,
       category,
@@ -18,9 +25,32 @@ const createFoundItem = async (req, res) => {
       date: parsedDate,
       contactInfo,
       description,
-      imageUrl,
+      imageUrl: imgs[0] || '',
+      images: imgs,
       userId: userId || null,
     });
+
+    // Notify moderators/admins that a new found item was uploaded
+    (async () => {
+      try {
+        const uploader = userId ? await UserModel.findById(userId).lean() : null;
+        const recipients = await UserModel.find({ role: { $in: ['moderator', 'admin'] } }).select('_id').lean();
+        if (Array.isArray(recipients) && recipients.length > 0) {
+          const title = `New Found Item: ${item.name}`;
+          const message = `${uploader?.name || 'A user'} uploaded a new found item: ${item.name}`;
+          const notifications = recipients.map(r => ({
+            userId: r._id,
+            type: 'new_item',
+            title,
+            message,
+            relatedItemId: item._id,
+          }));
+          await NotificationModel.insertMany(notifications);
+        }
+      } catch (e) {
+        console.warn('Failed to notify moderators of new found item', e);
+      }
+    })();
     return res.json({ data: item });
   } catch (err) {
     console.error('POST /found-items failed', err);
@@ -62,7 +92,7 @@ const getFoundItemById = async (req, res) => {
 const updateFoundItem = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, category, location, date, contactInfo, description, imageUrl, status } = req.body || {};
+    const { name, category, location, date, contactInfo, description, imageUrl, images, status } = req.body || {};
     
     const updateData = {};
     if (name !== undefined) updateData.name = name;
@@ -74,10 +104,17 @@ const updateFoundItem = async (req, res) => {
     }
     if (contactInfo !== undefined) updateData.contactInfo = contactInfo;
     if (description !== undefined) updateData.description = description;
-    if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+    if (images !== undefined) {
+      // when client provides images array, set images and keep imageUrl in sync
+      updateData.images = Array.isArray(images) ? images : [];
+      updateData.imageUrl = (Array.isArray(images) && images.length > 0) ? images[0] : '';
+    } else if (imageUrl !== undefined) {
+      updateData.imageUrl = imageUrl;
+      updateData.images = imageUrl ? [imageUrl] : [];
+    }
     
     if (status !== undefined) {
-      const validStatuses = ['Active', 'Archived', 'Deleted', 'Unclaimed', 'Pending', 'Claimed'];
+      const validStatuses = ['Active', 'Archived', 'Deleted', 'Unclaimed', 'Pending', 'Claimed', 'Returned'];
       if (validStatuses.includes(status)) {
         updateData.status = status;
       }
@@ -161,12 +198,14 @@ const exportFoundItemsPdf = async (req, res) => {
     const doc = new PDFDocument({ margin: 40, size: 'A4' });
     doc.pipe(res);
 
+    
+
     const colors = {
-      primary: '#059669',
+      primary: '#F97316',
       secondary: '#475569',
-      accent: '#047857',
+      accent: '#EA580C',
       border: '#CBD5E1',
-      background: '#F0FDF4',
+      background: '#FFF7ED',
       success: '#059669',
       warning: '#D97706',
       danger: '#DC2626',
@@ -177,22 +216,82 @@ const exportFoundItemsPdf = async (req, res) => {
     const pageWidth = doc.page.width;
     const contentWidth = pageWidth - (margin * 2);
 
+    const docId = `IFIND-${Date.now().toString(36)}-${Math.random().toString(16).slice(2,10)}`;
+    let currentPage = 0;
+
+    // Function to add header and footer to current page
+    const addHeaderFooter = () => {
+      const pageNum = currentPage;
+      if (pageNum === 1) {
+        // Title page header (white text over green band)
+        doc.save();
+        doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(14);
+        const h1 = 'iFind';
+        const h1w = doc.widthOfString(h1);
+        doc.text(h1, (pageWidth - h1w) / 2, 18, { lineBreak: false });
+        doc.font('Helvetica').fontSize(10);
+        const h2 = 'Found Item Management System';
+        const h2w = doc.widthOfString(h2);
+        doc.text(h2, (pageWidth - h2w) / 2, 36, { lineBreak: false });
+        doc.fontSize(9);
+        const h3 = 'Official Report';
+        const h3w = doc.widthOfString(h3);
+        doc.text(h3, (pageWidth - h3w) / 2, 50, { lineBreak: false });
+        doc.restore();
+      } else if (pageNum > 1) {
+        // Regular page header
+        doc.save();
+        doc.fillColor(colors.primary).font('Helvetica-Bold').fontSize(12);
+        const h1 = 'iFind';
+        const h1w = doc.widthOfString(h1);
+        doc.text(h1, (pageWidth - h1w) / 2, 12, { lineBreak: false });
+        doc.font('Helvetica').fontSize(10).fillColor(colors.secondary);
+        const h2 = 'Found Item Management System';
+        const h2w = doc.widthOfString(h2);
+        doc.text(h2, (pageWidth - h2w) / 2, 26, { lineBreak: false });
+        doc.fontSize(9);
+        const h3 = 'Official Report';
+        const h3w = doc.widthOfString(h3);
+        doc.text(h3, (pageWidth - h3w) / 2, 38, { lineBreak: false });
+        doc.restore();
+      }
+
+      // Footer on all pages
+      if (pageNum > 0) {
+        doc.save();
+        const footerY = doc.page.height - 25;
+        const footerText = `Document ID: ${docId}  |  Page ${pageNum}`;
+        doc.font('Helvetica').fontSize(8).fillColor('#666666');
+        const ftw = doc.widthOfString(footerText);
+        doc.text(footerText, (pageWidth - ftw) / 2, footerY, { lineBreak: false });
+        doc.restore();
+      }
+    };
+
+    // Add header/footer when new pages are created
+    doc.on('pageAdded', () => {
+      currentPage++;
+      addHeaderFooter();
+    });
+
     // Title Page
+    currentPage = 1;
     doc.rect(0, 0, pageWidth, 120).fill(colors.primary);
     doc.fillColor('#FFFFFF').fontSize(32).font('Helvetica-Bold').text('iFind', margin, 20);
     doc.fontSize(14).font('Helvetica').text('Found Item Management System', margin, 60);
     doc.fontSize(11).fillColor('#E2E8F0').text('Official Report', margin, 82);
+    addHeaderFooter();
 
     doc.y = 150;
-    doc.fillColor(colors.primary).fontSize(26).font('Helvetica-Bold').text('FOUND ITEMS REPORT', { align: 'center' });
+    doc.fillColor(colors.primary).fontSize(26).font('Helvetica-Bold').text('FOUND ITEMS REPORT', margin, doc.y, { align: 'center', width: contentWidth });
     
     doc.y += 15;
     doc.moveTo(margin, doc.y).lineTo(pageWidth - margin, doc.y).stroke(colors.accent);
     
     doc.y += 30;
     doc.fontSize(11).font('Helvetica').fillColor(colors.text);
-    doc.text(`Report Generated: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`, { align: 'center' });
-    doc.text(`Time: ${new Date().toLocaleTimeString('en-US')}`, { align: 'center' });
+    doc.text(`Report Generated: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`, margin, doc.y, { align: 'center', width: contentWidth });
+    doc.text(`Time: ${new Date().toLocaleTimeString('en-US')}`, margin, doc.y, { align: 'center', width: contentWidth });
     
     doc.y += 40;
     const statsBoxY = doc.y;
@@ -223,9 +322,8 @@ const exportFoundItemsPdf = async (req, res) => {
 
     doc.addPage({ margin: 40, size: 'A4' });
 
-    doc.fillColor(colors.primary).fontSize(16).font('Helvetica-Bold').text('DETAILED ITEMS LISTING', margin);
-    
-    doc.y += 15;
+    doc.y = 65; // Start below header
+    doc.fillColor(colors.primary).fontSize(16).font('Helvetica-Bold').text('DETAILED ITEMS LISTING', margin);    doc.y += 15;
     doc.moveTo(margin, doc.y).lineTo(pageWidth - margin, doc.y).stroke(colors.border);
     doc.y += 15;
 
@@ -264,15 +362,8 @@ const exportFoundItemsPdf = async (req, res) => {
       const rowY = doc.y;
       
       if (rowY + rowHeight > doc.page.height - 80) {
-        doc.fontSize(9).fillColor(colors.secondary).text(
-          `Page ${doc.page.number}`,
-          margin,
-          doc.page.height - 30,
-          { align: 'center', width: contentWidth }
-        );
-        
         doc.addPage({ margin: 40, size: 'A4' });
-        doc.y = margin;
+        doc.y = 65; // Start below header
         
         doc.rect(margin, doc.y, contentWidth, headerHeight).fill(colors.primary);
         doc.fillColor('#FFFFFF').fontSize(10).font('Helvetica-Bold');
@@ -331,19 +422,6 @@ const exportFoundItemsPdf = async (req, res) => {
     doc.y += 20;
     doc.fontSize(9).fillColor(colors.secondary).font('Helvetica');
     doc.text(`Total Records: ${items.length}`, margin);
-
-    doc.fontSize(8).fillColor('#999999').text(
-      'This document is an official report from the iFind Found Item Management System.',
-      margin,
-      doc.page.height - 40,
-      { align: 'center', width: contentWidth }
-    );
-    doc.text(
-      `Page ${doc.page.number}`,
-      margin,
-      doc.page.height - 20,
-      { align: 'center', width: contentWidth }
-    );
 
     doc.end();
   } catch (err) {
