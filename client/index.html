@@ -2,8 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/IFIND-LOGO.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <!-- Development Content Security Policy: permits local dev server and the external font host used in dev tooling. 
+          Tighten or remove in production. -->
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob: https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; connect-src 'self' http://localhost:5173 http://localhost:4000 ws://localhost:5173 https:; font-src 'self' https://r2cdn.perplexity.ai https: data:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:;">
     <title>iFind</title>
   </head>
   <body>
