@@ -4,18 +4,9 @@ const { OAuth2Client, oauth2Client, GOOGLE_CLIENT_ID } = require('../config/oaut
 const { verifyRecaptcha } = require('../services/recaptcha.service');
 
 const register = async (req, res) => {
-  const { name, email, password, recaptchaToken } = req.body;
+  const { name, email, password } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ message: 'Please fill out all required fields.' });
-  }
-
-  // Verify reCAPTCHA
-  const recaptchaResult = await verifyRecaptcha(recaptchaToken, req.ip);
-  if (!recaptchaResult.success) {
-    return res.status(400).json({ 
-      message: 'reCAPTCHA verification failed. Please try again.',
-      error: recaptchaResult.error 
-    });
   }
 
   // Check if registration is allowed
