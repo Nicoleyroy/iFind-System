@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 const UserModel = require('../models/user');
+require('dotenv').config({ path: '../config.env' });
 
-const uri = 'mongodb+srv://2301104852_db_user:LGOxiXneAqMqGI3D@ifind-test.c8i1gaf.mongodb.net/ifind-test?retryWrites=true&w=majority';
+const uri = process.env.MONGODB_URI;
 
 const makeAdmin = async (email) => {
   try {

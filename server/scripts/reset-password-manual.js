@@ -4,7 +4,8 @@ const bcrypt = require('bcryptjs');
 
 async function resetUserPassword() {
   try {
-    const mongoUri = 'mongodb+srv://2301104852_db_user:LGOxiXneAqMqGI3D@ifind-test.c8i1gaf.mongodb.net/ifind-test?retryWrites=true&w=majority';
+    require('dotenv').config({ path: '../config.env' });
+    const mongoUri = process.env.MONGODB_URI;
     console.log('Connecting to MongoDB...');
     await mongoose.connect(mongoUri);
     console.log('Connected!');

@@ -1,58 +1,11 @@
-# Dependencies
-node_modules/
-package-lock.json
-
-# Environment variables
+# Environment variables - NEVER commit these
+server/config.env
 .env
 .env.local
-.env.*.local
-config.env
 
-# Sensitive files with credentials
-server/mongodb.js
-server/drive_credentials.json
-drive_credentials.json
+# Dependencies
+node_modules/
 
 # Build outputs
 dist/
 build/
-.vite/
-
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# IDE / Editor
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
-.idea
-*.swp
-*.swo
-*~
-.DS_Store
-
-# OS files
-Thumbs.db
-
-# Credentials & Secrets
-*_credentials.json
-*.pem
-*.key
-
-# Backups (keep only latest, configure retention policy)
-server/backups/*.json
-!server/backups/.gitkeep
-
-# Testing
-coverage/
-.nyc_output/
-
-# Temporary files
-*.tmp
-tmp/
-temp/
