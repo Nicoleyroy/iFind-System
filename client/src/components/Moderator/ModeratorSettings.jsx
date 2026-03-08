@@ -274,7 +274,7 @@ function ModeratorSettings() {
     setLoading(true);
     try {
       // Create a backup first - use direct server URL to bypass Vite proxy timeout
-      const createRes = await fetch('http://localhost:4000/api/backup/create', { 
+      const createRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/backup/create`, { 
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' }
@@ -293,7 +293,7 @@ function ModeratorSettings() {
       const fileName = createJson.backup.fileName;
 
       // Upload to Drive - use direct server URL to bypass Vite proxy timeout
-      const uploadRes = await fetch('http://localhost:4000/api/backup/drive/upload', {
+      const uploadRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/backup/drive/upload`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

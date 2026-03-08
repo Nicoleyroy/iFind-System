@@ -49,7 +49,7 @@ const Login = () => {
                       // send the authorization code to the backend for token exchange
                       try {
                         console.log('Sending code to server...');
-                        const res = await fetch('http://localhost:4000/auth/google/code', {
+                        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/google/code`, {
                           method: "POST",
                           credentials: "include",
                           headers: { "Content-Type": "application/json" },
