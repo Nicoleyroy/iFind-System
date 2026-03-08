@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+mongoose.connect(process.env.MONGO_URI)
 require('dotenv').config({ path: './config.env' });
 
 const uri = process.env.MONGODB_URI;

@@ -40,6 +40,8 @@ if (config.NODE_ENV !== 'production') {
 }
 
 // Start server
-app.listen(config.PORT, config.HOST, () => {
-  console.log(`Server started on ${config.HOST}:${config.PORT}`);
+const PORT = process.env.PORT || config.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
