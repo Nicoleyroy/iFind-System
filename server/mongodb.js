@@ -1,7 +1,12 @@
-mongoose.connect(process.env.MONGO_URI)
-require('dotenv').config({ path: './config.env' });
+const mongoose = require('mongoose');
 
-const uri = process.env.MONGODB_URI;
+// Load local .env file in development — on Render, env vars come from the dashboard
+if (process.env.NODE_ENV !== 'production') {
+    require('dotenv').config({ path: './config.env' });
+}
+
+// Support both MONGO_URI (Render convention) and MONGODB_URI
+const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
 
 const connectToDB = async () => {
     try {
