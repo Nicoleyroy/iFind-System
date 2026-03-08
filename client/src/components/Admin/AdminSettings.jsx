@@ -15,13 +15,13 @@ import {
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 import { API_ENDPOINTS } from '../../utils/constants';
+import { confirm, inputPrompt, success as swalSuccess, error as swalError } from '../../utils/swal';
 import AdminSidebar from '../layout/AdminSidebar';
 
 const AdminSettings = () => {
   const [activeTab, setActiveTab] = useState('general');
   const [loading, setLoading] = useState(false);
   const [saveMessage, setSaveMessage] = useState({ type: '', text: '' });
-  
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
   const [profileData, setProfileData] = useState({
@@ -30,6 +30,8 @@ const AdminSettings = () => {
     phoneNumber: currentUser.phoneNumber || '',
     profilePicture: currentUser.profilePicture || '',
   });
+
+  const [emailLocked] = useState(true); // Email cannot be changed
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -46,7 +48,6 @@ const AdminSettings = () => {
     allowRegistration: true,
     requireEmailVerification: true,
   });
-
   // Load system settings from localStorage on mount
   useEffect(() => {
     const savedSettings = localStorage.getItem('admin_system_settings');
@@ -54,6 +55,8 @@ const AdminSettings = () => {
       setSystemSettings(JSON.parse(savedSettings));
     }
   }, []);
+
+  // (Drive helpers removed from Admin - Drive is handled by Moderator settings)
 
   const [securityStatus, setSecurityStatus] = useState({
     encryption: {
@@ -299,32 +302,34 @@ const AdminSettings = () => {
 
   const handleManualBackup = async () => {
     // Show confirmation dialog
-    const confirmed = window.confirm(
+    const confirmed = await confirm(
+      'Create backup?',
       'Are you sure you want to create a manual backup? This may take several minutes.'
     );
-    
     if (!confirmed) return;
-    
     setProcessing(true);
-    try {
-      // Call backend API to create backup
-      const response = await fetch(API_ENDPOINTS.BACKUP_CREATE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
+    // Retry logic: try up to 3 times with exponential backoff
+    const maxAttempts = 3;
+    let attempt = 0;
+    let lastError = null;
+    while (attempt < maxAttempts) {
+      attempt += 1;
+      try {
+        const response = await fetch(API_ENDPOINTS.BACKUP_CREATE, { method: 'POST' });
+        if (!response.ok) {
+          const text = await response.text().catch(() => null);
+          const body = text ? (JSON.parse(text) || null) : null;
+          const msg = body && body.message ? body.message : `Backup creation failed (status ${response.status})`;
+          throw new Error(msg);
+        }
+        const data = await response.json();
       
-      if (!response.ok) {
-        throw new Error('Backup creation failed');
-      }
-      
-      const data = await response.json();
-      
-      // Refresh backup history
-      const historyResponse = await fetch(API_ENDPOINTS.BACKUP_HISTORY);
-      if (historyResponse.ok) {
-        const historyData = await historyResponse.json();
-        setBackupHistory(historyData.backups || []);
-      }
+        // Refresh backup history
+        const historyResponse = await fetch(API_ENDPOINTS.BACKUP_HISTORY);
+        if (historyResponse.ok) {
+          const historyData = await historyResponse.json();
+          setBackupHistory(historyData.backups || []);
+        }
       
       // Update security status with new backup info
       setSecurityStatus(prev => ({
@@ -336,25 +341,40 @@ const AdminSettings = () => {
         },
       }));
       
-      showSaveMessage('success', `Backup completed successfully! Size: ${data.backup.size}, Duration: ${data.backup.duration}`);
-    } catch (error) {
-      console.error('Backup error:', error);
-      showSaveMessage('error', 'Backup failed. Please try again.');
-    } finally {
-      setProcessing(false);
+        showSaveMessage('success', `Backup completed successfully! Size: ${data.backup.size}, Duration: ${data.backup.duration}`);
+        // success -> break retry loop
+        lastError = null;
+        break;
+      } catch (error) {
+        console.error(`Backup attempt ${attempt} failed:`, error);
+        lastError = error;
+        if (attempt < maxAttempts) {
+          // wait before retrying
+          const delayMs = 1000 * Math.pow(2, attempt - 1);
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+          continue;
+        }
+      }
     }
+
+    if (lastError) {
+      showSaveMessage('error', lastError.message || 'Backup failed after multiple attempts. Please try again.');
+    }
+
+    setProcessing(false);
   };
 
   const handleRestoreBackup = async (backupFileName, backupDate) => {
     // Show warning confirmation
-    const confirmed = window.confirm(
-      `⚠️ WARNING: Restoring from backup will replace all current data with data from ${new Date(backupDate).toLocaleString()}.\n\nThis action cannot be undone. Are you sure you want to continue?`
+    const confirmed = await confirm(
+      'Create backup?',
+      'Are you sure you want to create a manual backup? This may take several minutes.'
     );
     
     if (!confirmed) return;
     
     // Double confirmation for critical action
-    const finalConfirm = prompt('Type YES (in capital letters) to confirm restore:');
+    const finalConfirm = await inputPrompt('Type YES (in capital letters) to confirm restore:');
     
     if (finalConfirm !== 'YES') {
       showSaveMessage('error', 'Restore cancelled. You must type YES to confirm.');
@@ -1162,15 +1182,18 @@ const AdminSettings = () => {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-2">Email Address *</label>
+                        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
+                          Email Address *
+                          <LockClosedIcon className="w-4 h-4 text-gray-400" title="Email cannot be changed" />
+                        </label>
                         <input
                           type="email"
                           value={profileData.email}
-                          onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                          required
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          disabled={emailLocked}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
                           placeholder="your.email@example.com"
                         />
+                        <p className="mt-1 text-xs text-gray-500">Email address cannot be changed for security reasons</p>
                       </div>
 
                       <div>

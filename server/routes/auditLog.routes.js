@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const AuditLogModel = require('../src/models/auditLog');
-const UserModel = require('../src/models/user');
-const LostItemModel = require('../src/models/lostItem');
-const FoundItemModel = require('../src/models/foundItem');
+const AuditLogModel = require('../models/auditLog');
+const UserModel = require('../models/user');
+const LostItemModel = require('../models/lostItem');
+const FoundItemModel = require('../models/foundItem');
 
 // Get all audit logs with filtering
 router.get('/audit-logs', async (req, res) => {

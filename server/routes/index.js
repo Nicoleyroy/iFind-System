@@ -9,9 +9,11 @@ const lostItemRoutes = require('./lostItem.routes');
 const foundItemRoutes = require('./foundItem.routes');
 const claimRoutes = require('./claim.routes');
 const notificationRoutes = require('./notification.routes');
+const contactRoutes = require('./contact.routes');
 const passwordResetRoutes = require('./password-reset.routes');
 const auditLogRoutes = require('./auditLog.routes');
 const backupRoutes = require('./backup.routes');
+const systemSettingsRoutes = require('./systemSettings.routes');
 
 // Health check endpoint
 router.get('/api', (req, res) => {
@@ -33,9 +35,11 @@ router.use(lostItemRoutes);
 router.use(foundItemRoutes);
 router.use(claimRoutes);
 router.use(notificationRoutes);
+router.use(contactRoutes);
 router.use(passwordResetRoutes);
 router.use(auditLogRoutes);
 router.use(backupRoutes);
+router.use(systemSettingsRoutes);
 
 module.exports = router;
 

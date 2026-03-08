@@ -47,12 +47,16 @@ const Login = () => {
                     if (resp?.code) {
                       // send the authorization code to the backend for token exchange
                       try {
-                        const res = await fetch(API_ENDPOINTS.GOOGLE_CODE, {
+                        console.log('Sending code to server...');
+                        const res = await fetch('http://localhost:4000/auth/google/code', {
                           method: "POST",
+                          credentials: "include",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({ code: resp.code }),
                         });
+                        console.log('Response status:', res.status);
                         const data = await res.json();
+                        console.log('Response data:', data);
                         if (res.ok) {
                           // Save user data to localStorage if provided
                           if (data.user) {
@@ -70,10 +74,11 @@ const Login = () => {
                             navigate("/dashboard");
                           }
                         } else {
-                          setError(data.error || "Google code exchange failed");
+                          console.error('Login failed:', data);
+                          setError(data.error || data.details || "Google code exchange failed");
                         }
                       } catch (err) {
-                        console.error(err);
+                        console.error('Login error:', err);
                         setError("Error connecting to server for Google code exchange");
                       }
                     } else {

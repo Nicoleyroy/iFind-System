@@ -1,3 +1,14 @@
+# Environment variables
 .env
-node_modules
-backups/
+config.env
+
+# Dependencies
+node_modules/
+
+# Backups - Keep folder structure but ignore backup files
+backups/*.json
+!backups/.gitkeep
+
+# Credentials
+drive_credentials.json
+*_credentials.json

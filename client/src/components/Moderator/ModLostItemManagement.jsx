@@ -7,6 +7,7 @@ import {
   List,
   Trash2,
   Archive,
+  CheckCircle,
   AlertCircle,
   Search,
   Filter,
@@ -22,6 +23,7 @@ import { API_ENDPOINTS } from "../../utils/constants";
 const STATUS_OPTIONS = [
   { value: "Active", label: "Active", color: "bg-blue-100", textColor: "text-blue-800", borderColor: "border-blue-300" },
   { value: "Archived", label: "Archived", color: "bg-amber-100", textColor: "text-amber-800", borderColor: "border-amber-300" },
+  { value: "Returned", label: "Returned", color: "bg-green-100", textColor: "text-green-800", borderColor: "border-green-300" },
 ];
 
 //notifications
@@ -294,6 +296,7 @@ const ModLostItemManagement = () => {
   const [metrics, setMetrics] = useState({
     activeLost: 0,
     archived: 0,
+    returned: 0,
   });
 
   // stuff for the modals and toast notifications
@@ -344,7 +347,12 @@ const ModLostItemManagement = () => {
       (item) => item.status === "Archived"
     ).length;
 
-    setMetrics({ activeLost: activeLost, archived });
+    // Count items that are currently Returned OR wereReturned (preserve visibility even if later archived)
+    const returned = itemsList.filter(
+      (item) => item.status === "Returned" || item.wasReturned === true
+    ).length;
+
+    setMetrics({ activeLost: activeLost, archived, returned });
   };
 
   // filter and search logic
@@ -354,10 +362,14 @@ const ModLostItemManagement = () => {
 
     // Apply status filter
     if (statusFilter !== "All") {
-      filtered = filtered.filter(
-        (item) =>
-          (item.status || "Active").toLowerCase() === statusFilter.toLowerCase()
-      );
+      filtered = filtered.filter((item) => {
+        const itemStatus = (item.status || "Active");
+        if (statusFilter.toLowerCase() === 'returned') {
+          // include items whose current status is Returned or that were marked returned before (wasReturned flag)
+          return (itemStatus === 'Returned') || (item.wasReturned === true);
+        }
+        return itemStatus.toLowerCase() === statusFilter.toLowerCase();
+      });
     }
     
     // Always exclude deleted items
@@ -394,6 +406,8 @@ const ModLostItemManagement = () => {
       isLoading: false,
     });
   };
+
+  
 
   // send archive request to API
   const handleArchive = async () => {
@@ -547,7 +561,7 @@ const ModLostItemManagement = () => {
         {/* Metrics Section */}
         <section className="px-8 py-6">
           <div className="-mt-12 mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border border-gray-100">
                 <div className="flex items-start justify-between mb-4">
                   <div>
@@ -577,9 +591,25 @@ const ModLostItemManagement = () => {
                   Manage
                 </button>
               </div>
+              <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border border-gray-100">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="text-gray-500 text-sm font-medium mb-2">Returned</h3>
+                    <p className="text-4xl font-bold text-gray-900">{metrics.returned}</p>
+                  </div>
+                  <div className="p-3 bg-green-50 rounded-xl">
+                    <CheckCircle className="w-8 h-8 text-green-600" />
+                  </div>
+                </div>
+                <button className="mt-3 w-full px-4 py-2 bg-green-50 hover:bg-green-100 rounded-lg text-sm font-semibold text-green-600 transition-colors">
+                  Manage
+                </button>
+              </div>
             </div>
           </div>
         </section>
+
+
 
         {/* Controls Section */}
         <section className="bg-white px-8 py-6 border-b border-gray-200">
@@ -621,6 +651,7 @@ const ModLostItemManagement = () => {
                 <option value="All">All Status</option>
                 <option value="Active">Active</option>
                 <option value="Archived">Archived</option>
+                <option value="Returned">Returned</option>
               </select>
               <ChevronDown className="absolute right-3 top-3.5 w-5 h-5 text-slate-400 pointer-events-none" />
             </div>
@@ -647,6 +678,7 @@ const ModLostItemManagement = () => {
                 <FileText className="w-4 h-4" />
                 Export
               </button>
+              
             </div>
           </div>
 

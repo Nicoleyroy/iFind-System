@@ -11,21 +11,30 @@ function ReportItem() {
   const [contactInfo, setContactInfo] = useState("");
   const [description, setDescription] = useState("");
   const [itemType, setItemType] = useState("lost"); // 'lost' or 'found'
-  const [imageFile, setImageFile] = useState(null);
+  const [imageFiles, setImageFiles] = useState([]);
+  const [previewIndex, setPreviewIndex] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const today = new Date().toISOString().split('T')[0];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
+    if (dateInfo && dateInfo > today) {
+      setError('Date cannot be in the future');
+      return;
+    }
     let imageUrl = '';
+    let images = [];
     setUploading(true);
     try {
-      if (imageFile) {
-        // upload to Cloudinary and get URL
-        imageUrl = await uploadToCloudinary(imageFile);
+      if (imageFiles && imageFiles.length > 0) {
+        // upload all files to Cloudinary and get URLs
+        const uploadPromises = imageFiles.map(file => uploadToCloudinary(file));
+        images = await Promise.all(uploadPromises);
+        imageUrl = images[0] || '';
       }
 
       // Get current user ID from localStorage
@@ -48,6 +57,7 @@ function ReportItem() {
         contactInfo,
         description,
         imageUrl,
+        images,
         userId,
       };
 
@@ -69,7 +79,8 @@ function ReportItem() {
       setContactInfo("");
       setDescription("");
       setItemType("lost");
-      setImageFile(null);
+      setImageFiles([]);
+      setPreviewIndex(0);
     } catch (err) {
       setError(`Failed to submit: ${err.message}`);
     } finally {
@@ -78,8 +89,9 @@ function ReportItem() {
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    setImageFile(file ?? null);
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    setImageFiles(files);
+    setPreviewIndex(0);
   };
 
   return (
@@ -96,9 +108,9 @@ function ReportItem() {
             <div className="lg:col-span-1">
               <div className="bg-white rounded-xl border border-[#5E5240]/10 p-4">
                 <div className="aspect-[4/3] rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 text-3xl">
-                  {imageFile ? (
+                  {imageFiles && imageFiles.length > 0 ? (
                     <img
-                      src={URL.createObjectURL(imageFile)}
+                      src={URL.createObjectURL(imageFiles[previewIndex])}
                       alt="Photo"
                       className="w-full h-full object-cover rounded-lg"
                     />
@@ -113,12 +125,29 @@ function ReportItem() {
                     type="file" 
                     accept="image/*" 
                     onChange={handleFileChange} 
-                    className="hidden" 
+                    className="hidden"
+                    multiple
                   />
-                  <div className="mt-4 w-full text-center bg-[#C0152F]/10 text-[#C0152F] hover:bg-[#C0152F]/20 transition rounded-md py-2 cursor-pointer">
+                  <div className="mt-4 w-full text-center bg-orange-50 text-orange-500 hover:bg-orange-100 transition rounded-md py-2 cursor-pointer">
                     Upload Photo
                   </div>
                 </label>
+
+                {/* thumbnails */}
+                {imageFiles && imageFiles.length > 1 && (
+                  <div className="mt-3 flex gap-2 overflow-x-auto">
+                    {imageFiles.map((f, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setPreviewIndex(idx)}
+                        className={`w-16 h-12 rounded-md overflow-hidden border ${idx === previewIndex ? 'border-orange-500' : 'border-gray-100'}`}
+                      >
+                        <img src={URL.createObjectURL(f)} alt={`thumb-${idx}`} className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -247,7 +276,7 @@ function ReportItem() {
                   <button
                     type="submit"
                     disabled={uploading}
-                    className={`bg-[#C0152F] text-white hover:bg-[#A01327] active:bg-[#8B1122] shadow-sm hover:shadow px-4 py-2 rounded-md text-sm font-medium ${uploading ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    className={`bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700 shadow-sm hover:shadow px-4 py-2 rounded-md text-sm font-medium ${uploading ? 'opacity-60 cursor-not-allowed' : ''}`}
                   >
                     {uploading ? 'Submitting...' : 'Submit Report'}
                   </button>

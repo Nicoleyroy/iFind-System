@@ -240,7 +240,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Secondary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-purple-100 rounded-lg">
@@ -268,23 +268,6 @@ const AdminDashboard = () => {
             </div>
             <div className="pt-3 border-t border-gray-100">
               <p className="text-xs text-gray-500">Accounts created in the last 7 days</p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-teal-100 rounded-lg">
-                <CheckCircleIcon className="w-6 h-6 text-teal-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Active Rate</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {((stats.activeUsers / stats.totalUsers) * 100 || 0).toFixed(1)}%
-                </p>
-              </div>
-            </div>
-            <div className="pt-3 border-t border-gray-100">
-              <p className="text-xs text-gray-500">Percentage of active accounts</p>
             </div>
           </div>
         </div>

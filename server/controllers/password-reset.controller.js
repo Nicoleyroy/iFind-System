@@ -1,4 +1,4 @@
-const UserModel = require('../src/models/user');
+const UserModel = require('../models/user');
 const resetCodeService = require('../services/reset-code.service');
 const emailService = require('../services/email.service');
 const config = require('../config');
@@ -60,8 +60,12 @@ const resetPassword = async (req, res) => {
   try {
     const user = await UserModel.findOne({ email });
     if (!user) return res.status(404).json({ error: 'No user with that email' });
+    
+    // Mark password as modified to trigger pre-save hook
     user.password = newPassword;
+    user.markModified('password');
     await user.save();
+    
     resetCodeService.deleteCode(email);
     return res.json({ ok: true });
   } catch (err) {

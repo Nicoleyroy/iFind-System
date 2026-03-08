@@ -1,8 +1,8 @@
-const ClaimRequestModel = require('../src/models/claimRequest');
-const LostItemModel = require('../src/models/lostItem');
-const FoundItemModel = require('../src/models/foundItem');
-const NotificationModel = require('../src/models/notification');
-const AuditLogModel = require('../src/models/auditLog');
+const ClaimRequestModel = require('../models/claimRequest');
+const LostItemModel = require('../models/lostItem');
+const FoundItemModel = require('../models/foundItem');
+const NotificationModel = require('../models/notification');
+const AuditLogModel = require('../models/auditLog');
 
 const createClaimRequest = async (req, res) => {
   try {
@@ -11,6 +11,18 @@ const createClaimRequest = async (req, res) => {
     
     if (!claimantId) {
       return res.status(400).json({ message: 'Claimant ID is required' });
+    }
+
+    const normalizedProof = String(proofOfOwnership || '').trim();
+    if (!normalizedProof) {
+      return res.status(400).json({ message: 'Proof of Ownership is required.' });
+    }
+    if (normalizedProof.length > 500) {
+      return res.status(400).json({ message: 'Proof of Ownership text is too long.' });
+    }
+    const proofPattern = /^[A-Za-z0-9\s.,'"\-()]+$/;
+    if (!proofPattern.test(normalizedProof)) {
+      return res.status(400).json({ message: 'Invalid characters in Proof of Ownership.' });
     }
     
     // Try to find item in LostItem or FoundItem collections
@@ -39,7 +51,7 @@ const createClaimRequest = async (req, res) => {
     const claimRequest = await ClaimRequestModel.create({
       itemId: id,
       claimantId: claimantId,
-      proofOfOwnership: proofOfOwnership || '',
+      proofOfOwnership: normalizedProof,
       imageUrl: imageUrl || '',
       status: 'Pending',
     });
@@ -164,7 +176,7 @@ const updateClaimStatus = async (req, res) => {
     }
     
     if (claimRequest.status !== 'Pending') {
-      return res.status(400).json({ message: 'Claim request has already been reviewed' });
+      return res.status(400).json({ message: 'Claim request already processed' });
     }
     
     claimRequest.status = status;
@@ -225,7 +237,10 @@ const updateClaimStatus = async (req, res) => {
     await claimRequest.populate('itemId', 'name');
     await claimRequest.populate('reviewedBy', 'name email');
     
-    return res.json({ data: claimRequest, message: `Claim request ${status.toLowerCase()} successfully` });
+    if (status === 'Approved') {
+      return res.json({ data: claimRequest, message: 'Claim request approved successfully' });
+    }
+    return res.json({ data: claimRequest, message: 'Claim request rejected successfully' });
   } catch (err) {
     console.error('PUT /claims/:id failed', err);
     return res.status(500).json({ message: 'Server error', error: err.message });

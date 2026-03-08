@@ -108,18 +108,6 @@ export default function AdminSidebar() {
         </div>
 
         <NavLink
-          to="/admin/reports"
-          className={({ isActive }) =>
-            `flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-              isActive ? "bg-orange-500 text-white shadow-lg" : "text-gray-700 hover:bg-gray-100"
-            }`
-          }
-        >
-          <FileText className="w-5 h-5" />
-          <span>Reports</span>
-        </NavLink>
-
-        <NavLink
           to="/admin/analytics"
           className={({ isActive }) =>
             `flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${

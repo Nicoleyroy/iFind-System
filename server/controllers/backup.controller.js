@@ -4,12 +4,12 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 // Models
-const User = require('../src/models/user');
-const Item = require('../src/models/item');
-const LostItem = require('../src/models/lostItem');
-const FoundItem = require('../src/models/foundItem');
-const ClaimRequest = require('../src/models/claimRequest');
-const AuditLog = require('../src/models/auditLog');
+const User = require('../models/user');
+const Item = require('../models/item');
+const LostItem = require('../models/lostItem');
+const FoundItem = require('../models/foundItem');
+const ClaimRequest = require('../models/claimRequest');
+const AuditLog = require('../models/auditLog');
 
 // Backup directory
 const BACKUP_DIR = path.join(__dirname, '..', 'backups');

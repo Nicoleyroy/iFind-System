@@ -1,27 +1,55 @@
-const UserModel = require('../src/models/user');
+const UserModel = require('../models/user');
+const SystemSettings = require('../models/systemSettings');
 const { OAuth2Client, oauth2Client, GOOGLE_CLIENT_ID } = require('../config/oauth');
+const { verifyRecaptcha } = require('../services/recaptcha.service');
 
 const register = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, recaptchaToken } = req.body;
   if (!name || !email || !password) {
-    return res.status(400).json({ message: 'Name, email, and password are required' });
+    return res.status(400).json({ message: 'Please fill out all required fields.' });
   }
-  
-  if (password.length < 6) {
+
+  // Verify reCAPTCHA
+  const recaptchaResult = await verifyRecaptcha(recaptchaToken, req.ip);
+  if (!recaptchaResult.success) {
+    return res.status(400).json({ 
+      message: 'reCAPTCHA verification failed. Please try again.',
+      error: recaptchaResult.error 
+    });
+  }
+
+  // Check if registration is allowed
+  try {
+    const settings = await SystemSettings.getSettings();
+    if (settings && !settings.allowRegistration) {
+      return res.status(403).json({ message: 'Registration is currently disabled.' });
+    }
+  } catch (err) {
+    console.error('Error checking system settings:', err);
+    // Continue with registration if settings check fails
+  }
+
+  const normalizedEmail = String(email).toLowerCase().trim();
+  const emailPattern = /^\S+@\S+\.\S+$/;
+  if (!emailPattern.test(normalizedEmail)) {
+    return res.status(400).json({ message: 'Please enter a valid email address.' });
+  }
+
+  if (String(password).length < 6) {
     return res.status(400).json({ message: 'Password must be at least 6 characters long' });
   }
   
   try {
-    const existingUser = await UserModel.findOne({ email: email.toLowerCase().trim() });
+    const existingUser = await UserModel.findOne({ email: normalizedEmail });
     if (existingUser) {
-      return res.status(400).json({ message: 'Email already registered' });
+      return res.status(400).json({ message: 'This email address is already associated with an account.' });
     }
     
-    const user = await UserModel.create({ name, email, password });
-    res.json({ data: user, message: 'User created successfully' });
+    const user = await UserModel.create({ name, email: normalizedEmail, password });
+    res.json({ data: user, message: 'Account Created Successfully!' });
   } catch(err) {
     if (err.code === 11000) {
-      return res.status(400).json({ message: 'Email already registered' });
+      return res.status(400).json({ message: 'This email address is already associated with an account.' });
     }
     if (err.name === 'ValidationError') {
       const errors = Object.values(err.errors).map(e => e.message).join(', ');
@@ -33,15 +61,60 @@ const register = async (req, res) => {
 };
 
 const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, recaptchaToken } = req.body;
   if (!email || !password) {
-    return res.status(400).json({ message: 'Email and password required' });
+    return res.status(400).json({ message: 'Please fill out all required fields.' });
   }
+
+  // Verify reCAPTCHA
+  const recaptchaResult = await verifyRecaptcha(recaptchaToken, req.ip);
+  if (!recaptchaResult.success) {
+    return res.status(400).json({ 
+      message: 'reCAPTCHA verification failed. Please try again.',
+      error: recaptchaResult.error 
+    });
+  }
+
   try {
-    const user = await UserModel.findOne({ email, password });
+    // Check maintenance mode
+    const settings = await SystemSettings.getSettings();
+    if (settings && settings.maintenanceMode) {
+      // Allow admin and moderator to login during maintenance
+      const normalizedEmail = String(email).toLowerCase().trim();
+      const user = await UserModel.findOne({ email: normalizedEmail });
+      if (!user || !['admin', 'moderator'].includes(user.role)) {
+        return res.status(503).json({ 
+          message: 'System is currently under maintenance. Please try again later.',
+          maintenanceMode: true
+        });
+      }
+    }
+    
+    const normalizedEmail = String(email).toLowerCase().trim();
+    const user = await UserModel.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
+
+    const status = String(user.accountStatus || '').toLowerCase();
+    if (['disabled', 'suspended', 'blocked', 'banned'].includes(status)) {
+      return res.status(403).json({ message: 'Account is disabled. Contact admin.' });
+    }
+    
+    // Check if user has a password (not Google-only account)
+    if (!user.password) {
+      return res.status(401).json({ message: 'Please login with Google' });
+    }
+    
+    // Compare password using bcrypt
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      if (['admin', 'moderator'].includes(user.role)) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+      return res.status(401).json({ message: 'Incorrect password. Please try again.' });
+    }
+    
     res.json({ message: 'Login successful', user });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -50,11 +123,11 @@ const login = async (req, res) => {
 
 const verifyGoogleToken = async (req, res) => {
   const { credential } = req.body;
-  if (!credential) return res.status(400).json({ error: 'Missing credential (id_token)' });
+  if (!credential) return res.status(400).json({ error: 'Invalid Google Account' });
   
   try {
-    if (!GOOGLE_CLIENT_ID) return res.status(500).json({ error: 'Server GOOGLE_CLIENT_ID not set' });
-    if (!OAuth2Client) return res.status(501).json({ error: 'Server missing google-auth-library dependency' });
+    if (!GOOGLE_CLIENT_ID) return res.status(500).json({ error: 'Invalid Google Account' });
+    if (!OAuth2Client) return res.status(501).json({ error: 'Invalid Google Account' });
     
     const client = new OAuth2Client(GOOGLE_CLIENT_ID);
     const ticket = await client.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_ID });
@@ -63,10 +136,21 @@ const verifyGoogleToken = async (req, res) => {
     const { sub: googleId, email, name, picture } = payload;
     
     if (!email) {
-      return res.status(400).json({ error: 'Email not provided by Google' });
+      return res.status(400).json({ error: 'Invalid Google Account' });
     }
     
     let user = await UserModel.findOne({ email: email.toLowerCase().trim() });
+    
+    // Check maintenance mode for existing users
+    const settings = await SystemSettings.getSettings();
+    if (settings && settings.maintenanceMode) {
+      if (user && !['admin', 'moderator'].includes(user.role)) {
+        return res.status(503).json({ 
+          error: 'System is currently under maintenance. Please try again later.',
+          maintenanceMode: true
+        });
+      }
+    }
     
     if (user) {
       if (!user.googleId) {
@@ -98,19 +182,19 @@ const verifyGoogleToken = async (req, res) => {
       return res.status(400).json({ error: 'This Google account is already linked to another user' });
     }
     
-    return res.status(400).json({ error: 'Invalid Google credential', details: err.message });
+    return res.status(400).json({ error: 'Invalid Google Account', details: err.message });
   }
 };
 
 const exchangeGoogleCode = async (req, res) => {
   const { code } = req.body;
-  if (!code) return res.status(400).json({ error: 'Missing code' });
+  if (!code) return res.status(400).json({ error: 'Invalid Google Account' });
 
   try {
     const r = await oauth2Client.getToken({ code, redirect_uri: 'postmessage' });
     const { id_token } = r.tokens;
 
-    if (!id_token) return res.status(400).json({ error: 'No ID token received from Google' });
+    if (!id_token) return res.status(400).json({ error: 'Invalid Google Account' });
 
     const client = new OAuth2Client(GOOGLE_CLIENT_ID);
     const ticket = await client.verifyIdToken({
@@ -121,6 +205,18 @@ const exchangeGoogleCode = async (req, res) => {
     const { sub: googleId, email, name, picture } = payload;
 
     let user = await UserModel.findOne({ email });
+    
+    // Check maintenance mode for existing users
+    const settings = await SystemSettings.getSettings();
+    if (settings && settings.maintenanceMode) {
+      if (user && !['admin', 'moderator'].includes(user.role)) {
+        return res.status(503).json({ 
+          error: 'System is currently under maintenance. Please try again later.',
+          maintenanceMode: true
+        });
+      }
+    }
+    
     if (!user) {
       user = await UserModel.create({
         name,
@@ -136,7 +232,7 @@ const exchangeGoogleCode = async (req, res) => {
     res.json({ ok: true, user: userObj, message: 'Google login successful' });
   } catch (err) {
     console.error('Error exchanging Google code:', err);
-    res.status(400).json({ error: 'Code exchange failed', details: err.message });
+    res.status(400).json({ error: 'Invalid Google Account', details: err.message });
   }
 };
 const exchangeGoogleCodeGet = async (req, res) =>{
