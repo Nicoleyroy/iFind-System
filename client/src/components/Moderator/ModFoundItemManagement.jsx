@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Search, Filter, Plus, Edit, Trash2, Eye, Calendar,
   MapPin, Package, CheckCircle, XCircle, Clock, AlertCircle,
   Image as ImageIcon, Save, X as CloseIcon, Download, Archive,
-  RotateCcw, TrendingUp, Box, Layers, Bell, User
+  RotateCcw, TrendingUp, Box, Layers, Bell, User, ChevronDown
 } from "lucide-react";
 import ModSidebar from "../layout/ModSidebar";
 import { API_ENDPOINTS } from "../../utils/constants";
@@ -11,6 +12,7 @@ import { confirm, success as swalSuccess, error as swalError } from '../../utils
 import { uploadToCloudinary } from '../../utils/cloudinary';
 
 const ModFoundItemManagement = () => {
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -20,6 +22,8 @@ const ModFoundItemManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("add"); // add, edit, view
   const [selectedItem, setSelectedItem] = useState(null);
+  const [viewState, setViewState] = useState('list'); // 'list' or 'detail'
+  const [detailItem, setDetailItem] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -47,10 +51,91 @@ const ModFoundItemManagement = () => {
   const [r_uploading, setRUploading] = useState(false);
   const [r_error, setRError] = useState("");
   const [r_success, setRSuccess] = useState("");
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     fetchItems();
   }, []);
+
+  useEffect(() => {
+    const loadNotifications = async () => {
+      const userId = user?._id || user?.id;
+      if (!userId) return;
+      try {
+        const res = await fetch(`${API_ENDPOINTS.NOTIFICATIONS}?userId=${userId}`);
+        const json = await res.json();
+        if (Array.isArray(json.data)) setNotifications(json.data);
+      } catch (e) {
+        console.warn('Failed to load moderator notifications', e);
+      }
+    };
+
+    const loadUnread = async () => {
+      const userId = user?._id || user?.id;
+      if (!userId) return;
+      try {
+        const res = await fetch(`${API_ENDPOINTS.NOTIFICATIONS_UNREAD_COUNT}?userId=${userId}`);
+        const json = await res.json();
+        if (json.data && typeof json.data.count === 'number') setUnreadCount(json.data.count);
+      } catch (e) {
+        console.warn('Failed to load unread count', e);
+      }
+    };
+
+    loadNotifications();
+    loadUnread();
+
+    const iv = setInterval(() => { loadNotifications(); loadUnread(); }, 30000);
+    return () => clearInterval(iv);
+  }, [user]);
+
+  const handleNotificationClick = async (notification) => {
+    const userId = user?._id || user?.id;
+    if (!notification) return;
+    if (!notification.read) {
+      try {
+        await fetch(API_ENDPOINTS.NOTIFICATION_READ(notification._id), { method: 'PUT' });
+        const res = await fetch(`${API_ENDPOINTS.NOTIFICATIONS}?userId=${userId}`);
+        const json = await res.json();
+        if (Array.isArray(json.data)) setNotifications(json.data);
+        const countRes = await fetch(`${API_ENDPOINTS.NOTIFICATIONS_UNREAD_COUNT}?userId=${userId}`);
+        const countJson = await countRes.json();
+        if (countJson.data && typeof countJson.data.count === 'number') setUnreadCount(countJson.data.count);
+      } catch (e) {
+        console.warn('Failed to mark notification read', e);
+      }
+    }
+
+    if (notification.relatedClaimId) {
+      navigate('/moderator/item-verification');
+      return;
+    }
+
+    if (notification.relatedItemId) {
+      navigate('/moderator/FoundItem/Management');
+      return;
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    const userId = user?._id || user?.id;
+    if (!userId) return;
+    try {
+      await fetch(API_ENDPOINTS.NOTIFICATIONS_READ_ALL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      const res = await fetch(`${API_ENDPOINTS.NOTIFICATIONS}?userId=${userId}`);
+      const json = await res.json();
+      if (Array.isArray(json.data)) setNotifications(json.data);
+      setUnreadCount(0);
+    } catch (e) {
+      console.warn('Failed to mark all notifications read', e);
+    }
+  };
 
   const fetchItems = async () => {
     try {
@@ -93,10 +178,7 @@ const ModFoundItemManagement = () => {
     if (searchTerm.trim()) {
       const search = searchTerm.toLowerCase();
       filtered = filtered.filter(item => 
-        item.name?.toLowerCase().includes(search) ||
-        item.description?.toLowerCase().includes(search) ||
-        item.location?.toLowerCase().includes(search) ||
-        item.category?.toLowerCase().includes(search)
+        item.name?.toLowerCase().includes(search)
       );
     }
 
@@ -121,9 +203,8 @@ const ModFoundItemManagement = () => {
   const categories = [...new Set(items.map(item => item.category).filter(Boolean))];
 
   const handleView = (item) => {
-    setSelectedItem(item);
-    setModalMode("view");
-    setShowModal(true);
+    setDetailItem(item);
+    setViewState('detail');
   };
 
   const handleEdit = (item) => {
@@ -146,8 +227,16 @@ const ModFoundItemManagement = () => {
     e.preventDefault();
     
     if (!formData.name.trim()) {
-      swalError('Validation', 'Item name is required');
+      swalError('Validation', 'Item Name is required');
       return;
+    }
+
+    if (formData.date) {
+      const parsedDate = new Date(formData.date);
+      if (isNaN(parsedDate.getTime())) {
+        swalError('Validation', 'Invalid date format');
+        return;
+      }
     }
 
     try {
@@ -179,7 +268,11 @@ const ModFoundItemManagement = () => {
       }
     } catch (error) {
       console.error("Error:", error);
-      swalError('Error', 'An error occurred');
+      if (modalMode === 'edit') {
+        swalError('Error', 'Item could not be updated. Try again.');
+      } else {
+        swalError('Error', 'Unable to submit item. Check your connection.');
+      }
     }
   };
 
@@ -202,7 +295,7 @@ const ModFoundItemManagement = () => {
       }
     } catch (error) {
       console.error("Error deleting item:", error);
-      swalError('Error', 'An error occurred');
+      swalError('Error', 'Item could not be deleted. Try again.');
     }
   };
 
@@ -245,6 +338,14 @@ const ModFoundItemManagement = () => {
   // Report Found Item handlers (moderator quick-report)
   const handleRFileChange = (e) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    const hasInvalid = files.some(file => !allowedTypes.includes(file.type));
+    if (hasInvalid) {
+      setRError('Only JPG and PNG files are allowed.');
+      setRImageFiles([]);
+      setRPreviewIndex(0);
+      return;
+    }
     setRImageFiles(files);
     setRPreviewIndex(0);
   };
@@ -253,6 +354,48 @@ const ModFoundItemManagement = () => {
     e.preventDefault();
     setRError("");
     setRSuccess("");
+    if (!r_itemName.trim()) {
+      setRError('Item Name is required.');
+      return;
+    }
+    if (!r_category) {
+      setRError('Please select a category.');
+      return;
+    }
+    if (!r_location.trim()) {
+      setRError('Location is required.');
+      return;
+    }
+    if (!r_dateInfo) {
+      setRError('Date is required.');
+      return;
+    }
+    // Get today's date in local timezone (YYYY-MM-DD)
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+    
+    if (r_dateInfo > todayStr) {
+      setRError('Date cannot be in the future.');
+      return;
+    }
+    const normalizedContact = String(r_contactInfo || '').trim();
+    const emailPattern = /^\S+@\S+\.\S+$/;
+    const phonePattern = /^[+]?\d[\d\s().-]{5,}$/;
+    if (!normalizedContact || (!emailPattern.test(normalizedContact) && !phonePattern.test(normalizedContact))) {
+      setRError('Enter valid contact information.');
+      return;
+    }
+    if (!r_description.trim()) {
+      setRError('Description is required.');
+      return;
+    }
+    if (!r_imageFiles || r_imageFiles.length === 0) {
+      setRError('At least one photo is required.');
+      return;
+    }
     let imageUrl = '';
     let images = [];
     setRUploading(true);
@@ -301,7 +444,7 @@ const ModFoundItemManagement = () => {
       // optionally refresh the list
       fetchItems();
     } catch (err) {
-      setRError(`Failed to submit: ${err.message}`);
+      setRError(err?.message || 'Unable to submit item. Check your connection.');
     } finally {
       setRUploading(false);
     }
@@ -346,37 +489,74 @@ const ModFoundItemManagement = () => {
       <ModSidebar />
 
       <main className="flex-1 md:ml-64 overflow-y-auto">
-        {/* Modern Header with Gradient */}
-        <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white px-8 py-10">
-          <div className="flex items-center justify-between mb-6">
-            {/* Notification Bell */}
-            <div className="relative">
-              <button className="p-3 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-all">
-                <Bell className="w-6 h-6 text-white" />
-              </button>
+        {/* Compact Header with Gradient */}
+        <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white px-8 py-14">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <div>
+                <h1 className="text-3xl font-bold">Found Items Management</h1>
+                <p className="text-white/85 text-base mt-1">Manage and track all found items in the system</p>
+              </div>
             </div>
 
-            {/* Right: Profile */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <button
+                  onClick={() => setShowNotifications(prev => !prev)}
+                  className="p-2.5 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-all relative"
+                >
+                  <Bell className="w-5 h-5 text-white" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-600 rounded-full flex items-center justify-center text-xs font-bold border-2 border-white">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {showNotifications && (
+                  <div className="absolute right-0 mt-3 w-96 z-50 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div className="p-3 border-b border-gray-100 flex items-center justify-between">
+                      <h3 className="text-sm font-bold">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <button onClick={handleMarkAllRead} className="text-xs text-orange-600 hover:text-orange-700">Mark all as read</button>
+                      )}
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="text-center p-6 text-gray-500">
+                          <Bell className="mx-auto h-10 w-10 text-gray-300" />
+                          <p className="mt-3">No notifications</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 p-3">
+                          {notifications.map(n => (
+                            <div
+                              key={n._id}
+                              onClick={() => { handleNotificationClick(n); setShowNotifications(false); }}
+                              className={`p-2 rounded-lg cursor-pointer ${n.read ? 'bg-gray-50 hover:bg-gray-100' : 'bg-blue-50 hover:bg-blue-100 border-l-4 border-blue-500'}`}
+                            >
+                              <p className={`text-sm font-semibold ${n.read ? 'text-gray-700' : 'text-gray-900'}`}>{n.title}</p>
+                              <p className="text-xs text-gray-600 mt-1 line-clamp-2">{n.message}</p>
+                              <p className="text-xs text-gray-400 mt-1">{new Date(n.createdAt).toLocaleString()}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <p className="text-white text-sm font-semibold leading-tight">JOANNA NICOLE YROY</p>
+                  <p className="text-white text-sm font-semibold leading-tight">{user?.name || 'Moderator'}</p>
                   <p className="text-white/70 text-xs">Moderator</p>
                 </div>
                 <div className="w-11 h-11 bg-orange-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
-                  <span className="text-white text-lg font-bold">J</span>
+                  <span className="text-white text-lg font-bold">{(user?.name || 'M').charAt(0).toUpperCase()}</span>
                 </div>
               </div>
             </div>
-          </div>
-     
-
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">Found Items Management</h1>
-              <p className="text-red-100 text-lg">Manage and track all found items in the system</p>
-            </div>
-            {/* Actions moved to the search bar line below */}
           </div>
         </div>
 
@@ -389,7 +569,7 @@ const ModFoundItemManagement = () => {
                   <h3 className="text-xl font-bold">Report Found Item</h3>
                   <p className="text-sm text-slate-500">Quick report for moderators (Found items only)</p>
                 </div>
-                <button onClick={() => setShowReportModal(false)} className="text-slate-500 hover:text-slate-700">Close</button>
+                <button onClick={() => setShowReportModal(false)} className="text-slate-500 hover:text-slate-800 transition-all active:scale-95">Close</button>
               </div>
 
               {r_error && <div className="mb-3 p-3 bg-red-50 text-red-700 rounded">{r_error}</div>}
@@ -406,7 +586,7 @@ const ModFoundItemManagement = () => {
                   </div>
                   <label htmlFor="r-image-upload" className="mt-4 block">
                     <input id="r-image-upload" type="file" accept="image/*" onChange={handleRFileChange} className="hidden" multiple />
-                    <div className="mt-4 w-full text-center bg-green-50 text-green-600 hover:bg-green-100 transition rounded-md py-2 cursor-pointer">Upload Photo</div>
+                    <div className="mt-4 w-full text-center bg-green-600 text-white hover:bg-green-700 shadow-sm hover:shadow-md transition-all active:scale-95 rounded-md py-2 cursor-pointer">Upload Photo</div>
                   </label>
                   {r_imageFiles && r_imageFiles.length > 1 && (
                     <div className="mt-3 flex gap-2 overflow-x-auto">
@@ -465,8 +645,8 @@ const ModFoundItemManagement = () => {
                   </div>
 
                   <div className="mt-4 flex justify-end gap-2">
-                    <button type="button" onClick={() => setShowReportModal(false)} className="px-4 py-2 rounded bg-gray-200">Cancel</button>
-                    <button type="submit" disabled={r_uploading} className={`px-4 py-2 rounded bg-green-600 text-white ${r_uploading ? 'opacity-60 cursor-not-allowed' : ''}`}>{r_uploading ? 'Submitting...' : 'Submit Report'}</button>
+                    <button type="button" onClick={() => setShowReportModal(false)} className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium transition-all active:scale-95">Cancel</button>
+                    <button type="submit" disabled={r_uploading} className={`px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 shadow-sm hover:shadow-md transition-all active:scale-95 ${r_uploading ? 'opacity-60 cursor-not-allowed' : ''}`}>{r_uploading ? 'Submitting...' : 'Submit Report'}</button>
                   </div>
                 </div>
               </form>
@@ -474,15 +654,15 @@ const ModFoundItemManagement = () => {
           </div>
         )}
 
-        <div className="px-8 py-6">
+        {/* Main Content - Conditional Rendering */}
+        {viewState === 'list' ? (
+          <div className="px-8 py-6">
           {/* Stats Cards - Modern Design */}
-          <div className="-mt-12 mb-8">
+          <div className="mt-6 mb-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {/* Total Items Card */}
               <div 
-                className={`bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border-2 cursor-pointer ${
-                  statusFilter === "all" ? "border-blue-500 ring-2 ring-blue-200" : "border-gray-100"
-                }`}
+                className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border-2 border-gray-100 cursor-pointer"
                 onClick={() => setStatusFilter("all")}
               >
                 <div className="flex items-start justify-between mb-4">
@@ -496,16 +676,14 @@ const ModFoundItemManagement = () => {
                     <Layers className={`w-8 h-8 ${statusFilter === "all" ? "text-white" : "text-blue-600"}`} />
                   </div>
                 </div>
-                <button className="mt-3 w-full px-4 py-2 bg-blue-50 hover:bg-blue-100 rounded-lg text-sm font-semibold text-blue-600 transition-colors">
+                <button className="mt-3 w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold shadow-sm hover:shadow-md hover:bg-blue-700 transition-all active:scale-95">
                   {statusFilter === "all" ? "Showing All" : "View All"}
                 </button>
               </div>
               
               {/* Active Items Card */}
               <div 
-                className={`bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border-2 cursor-pointer ${
-                  statusFilter === "active" ? "border-cyan-500 ring-2 ring-cyan-200" : "border-gray-100"
-                }`}
+                className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border-2 border-gray-100 cursor-pointer"
                 onClick={() => setStatusFilter(statusFilter === "active" ? "all" : "active")}
               >
                 <div className="flex items-start justify-between mb-4">
@@ -521,16 +699,14 @@ const ModFoundItemManagement = () => {
                     <CheckCircle className={`w-8 h-8 ${statusFilter === "active" ? "text-white" : "text-cyan-600"}`} />
                   </div>
                 </div>
-                <button className="mt-3 w-full px-4 py-2 bg-cyan-50 hover:bg-cyan-100 rounded-lg text-sm font-semibold text-cyan-600 transition-colors">
+                <button className="mt-3 w-full px-4 py-2 bg-cyan-600 text-white rounded-lg text-sm font-semibold shadow-sm hover:shadow-md hover:bg-cyan-700 transition-all active:scale-95">
                   {statusFilter === "active" ? "Clear Filter" : "Manage"}
                 </button>
               </div>
               
               {/* Archived Items Card */}
               <div 
-                className={`bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border-2 cursor-pointer ${
-                  statusFilter === "archived" ? "border-green-500 ring-2 ring-green-200" : "border-gray-100"
-                }`}
+                className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border-2 border-gray-100 cursor-pointer"
                 onClick={() => setStatusFilter(statusFilter === "archived" ? "all" : "archived")}
               >
                 <div className="flex items-start justify-between mb-4">
@@ -546,7 +722,7 @@ const ModFoundItemManagement = () => {
                     <Archive className={`w-8 h-8 ${statusFilter === "archived" ? "text-white" : "text-green-600"}`} />
                   </div>
                 </div>
-                <button className="mt-3 w-full px-4 py-2 bg-green-50 hover:bg-green-100 rounded-lg text-sm font-semibold text-green-600 transition-colors">
+                <button className="mt-3 w-full px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold shadow-sm hover:shadow-md hover:bg-green-700 transition-all active:scale-95">
                   {statusFilter === "archived" ? "Clear Filter" : "Manage"}
                 </button>
               </div>
@@ -574,7 +750,7 @@ const ModFoundItemManagement = () => {
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-600 bg-white font-medium text-gray-700"
+                    className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-600 bg-white font-medium text-gray-700 transition-all hover:border-slate-400 hover:bg-slate-50"
                   >
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
@@ -584,7 +760,7 @@ const ModFoundItemManagement = () => {
                   <select
                     value={categoryFilter}
                     onChange={(e) => setCategoryFilter(e.target.value)}
-                    className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-600 bg-white font-medium text-gray-700"
+                    className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-600 bg-white font-medium text-gray-700 transition-all hover:border-slate-400 hover:bg-slate-50"
                   >
                     <option value="all">All Categories</option>
                     {categories.map(cat => (
@@ -595,7 +771,7 @@ const ModFoundItemManagement = () => {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-600 bg-white font-medium text-gray-700"
+                    className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-600 bg-white font-medium text-gray-700 transition-all hover:border-slate-400 hover:bg-slate-50"
                   >
                     <option value="newest">Latest</option>
                     <option value="oldest">Oldest</option>
@@ -609,7 +785,7 @@ const ModFoundItemManagement = () => {
                 <button
                   onClick={handleExportPdf}
                   disabled={exporting}
-                  className={`px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-900`}
+                  className={`px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition-all font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-900 hover:shadow-md active:scale-95`}
                   title="Export PDF"
                 >
                   <Download className="w-4 h-4" />
@@ -617,7 +793,7 @@ const ModFoundItemManagement = () => {
                 </button>
                 <button
                   onClick={() => setShowReportModal(true)}
-                  className="px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition font-medium flex items-center gap-2"
+                  className="px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-all font-medium flex items-center gap-2 hover:shadow-md active:scale-95"
                   title="Add New Item"
                 >
                   <Plus className="w-4 h-4" />
@@ -635,7 +811,7 @@ const ModFoundItemManagement = () => {
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm("")}
-                  className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                  className="text-sm text-orange-600 hover:text-orange-700 font-medium px-3 py-1 rounded-lg hover:bg-orange-50 transition-all active:scale-95"
                 >
                   Clear search
                 </button>
@@ -669,7 +845,7 @@ const ModFoundItemManagement = () => {
                     resetForm();
                     setShowModal(true);
                   }}
-                  className="bg-orange-600 text-white px-8 py-4 rounded-xl font-bold inline-flex items-center gap-2 hover:bg-orange-700 transition-all shadow-lg hover:shadow-xl"
+                  className="bg-orange-600 text-white px-8 py-4 rounded-xl font-bold inline-flex items-center gap-2 hover:bg-orange-700 transition-all shadow-lg hover:shadow-xl active:scale-95"
                 >
                   <Plus className="w-6 h-6" />
                   Add Your First Item
@@ -694,7 +870,11 @@ const ModFoundItemManagement = () => {
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {filteredItems.map((item) => (
-                      <tr key={item._id} className="hover:bg-gray-50 transition-colors">
+                      <tr 
+                        key={item._id} 
+                        onClick={() => handleView(item)}
+                        className="hover:bg-gray-50 transition-all hover:outline-2 hover:outline-blue-400 cursor-pointer"
+                      >
                         <td className="px-6 py-4">
                           {item.imageUrl ? (
                             <img src={item.imageUrl} alt={item.name} className="w-16 h-16 rounded-lg object-cover" />
@@ -733,13 +913,23 @@ const ModFoundItemManagement = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-2">
-                            <button onClick={() => handleDelete(item._id)} className="p-2 hover:bg-red-100 rounded-lg transition-colors" title="Delete">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(item._id);
+                              }} 
+                              className="p-2 hover:bg-red-200 rounded-lg transition-all active:scale-95" 
+                              title="Delete"
+                            >
                               <Trash2 className="w-5 h-5 text-red-600" />
                             </button>
                             <button
-                              onClick={() => handleStatusChange(item._id, "Archived")}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStatusChange(item._id, "Archived");
+                              }}
                               disabled={item.status === "Archived"}
-                              className={`p-2 rounded-lg transition-colors ${item.status === 'Archived' ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'hover:bg-yellow-100'}`}
+                              className={`p-2 rounded-lg transition-all ${item.status === 'Archived' ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'hover:bg-yellow-200 active:scale-95'}`}
                               title="Archive"
                             >
                               <Archive className="w-5 h-5 text-yellow-600" />
@@ -754,6 +944,147 @@ const ModFoundItemManagement = () => {
             </div>
           )}
         </div>
+        ) : (
+          /* Detail View */
+          <section className="px-8 py-6">
+            {/* Back Button and Header */}
+            <div className="mb-6">
+              <button
+                onClick={() => {
+                  setViewState('list');
+                  setDetailItem(null);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-all font-medium mb-4"
+              >
+                <ChevronDown className="w-5 h-5 rotate-90" />
+                Back to List
+              </button>
+              <h2 className="text-2xl font-bold text-gray-900">Item Details</h2>
+            </div>
+
+            {detailItem && (
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                {/* Item Image */}
+                {detailItem.imageUrl && (
+                  <div className="w-full bg-gray-50 p-8 flex justify-center border-b border-gray-200">
+                    <img
+                      src={detailItem.imageUrl}
+                      alt={detailItem.name}
+                      className="max-w-full max-h-96 object-contain rounded-lg shadow-md"
+                    />
+                  </div>
+                )}
+
+                <div className="p-8 space-y-8">
+                  {/* Status Badge */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-gray-600">Status:</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                      detailItem.status === "Active" ? "bg-green-100 text-green-800" :
+                      detailItem.status === "Archived" ? "bg-yellow-100 text-yellow-800" :
+                      "bg-red-100 text-red-800"
+                    }`}>
+                      {detailItem.status || "Active"}
+                    </span>
+                  </div>
+
+                  {/* Details Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Item Name</label>
+                      <p className="text-xl font-semibold text-gray-900">{detailItem.name}</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Category</label>
+                      <p className="text-lg text-gray-800">{detailItem.category || "Not specified"}</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Location Found</label>
+                      <p className="text-lg text-gray-800">{detailItem.location || "Not specified"}</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Date Found</label>
+                      <p className="text-lg text-gray-800">
+                        {detailItem.date || detailItem.createdAt ? new Date(detailItem.date || detailItem.createdAt).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : "Not specified"}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Date Posted</label>
+                      <p className="text-lg text-gray-800">
+                        {detailItem.createdAt ? new Date(detailItem.createdAt).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : "Not specified"}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Contact Information</label>
+                      <p className="text-lg text-gray-800">{detailItem.contactInfo || "Not provided"}</p>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <div className="space-y-3">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Description</label>
+                    <p className="text-base text-gray-800 leading-relaxed bg-gray-50 p-5 rounded-lg border border-gray-200">
+                      {detailItem.description || "No description provided"}
+                    </p>
+                  </div>
+
+                  {/* Reporter Info */}
+                  {detailItem.userId && (
+                    <div className="border-t pt-6">
+                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Reporter Information</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold text-gray-400 uppercase">Name</label>
+                          <p className="text-base text-gray-900 font-medium">{detailItem.userId.name || "Unknown"}</p>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold text-gray-400 uppercase">Email</label>
+                          <p className="text-base text-gray-900">{detailItem.userId.email || "Not provided"}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-4 pt-6 border-t">
+                    <button
+                      onClick={() => handleStatusChange(detailItem._id, "Archived")}
+                      disabled={detailItem.status === "Archived"}
+                      className="px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-all hover:shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      <Archive className="w-5 h-5" />
+                      Archive Item
+                    </button>
+                    <button
+                      onClick={() => handleDelete(detailItem._id)}
+                      className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-all hover:shadow-md active:scale-95 flex items-center gap-2"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                      Delete Item
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
       </main>
 
       {/* Modal */}
@@ -782,7 +1113,7 @@ const ModFoundItemManagement = () => {
                   setShowModal(false);
                   resetForm();
                 }}
-                className="p-2.5 hover:bg-white/20 rounded-lg transition-colors"
+                className="p-2.5 hover:bg-white/30 rounded-lg transition-all active:scale-95"
               >
                 <CloseIcon className="w-6 h-6 text-white" />
               </button>
@@ -935,7 +1266,7 @@ const ModFoundItemManagement = () => {
                 <div className="flex gap-3 pt-4">
                   <button
                     type="submit"
-                    className="flex-1 bg-orange-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-orange-700 transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 bg-orange-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-orange-700 transition-all flex items-center justify-center gap-2 hover:shadow-md active:scale-95"
                   >
                     <Save className="w-5 h-5" />
                     {modalMode === "edit" ? "Update Item" : "Add Item"}
@@ -946,7 +1277,7 @@ const ModFoundItemManagement = () => {
                       setShowModal(false);
                       resetForm();
                     }}
-                    className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-colors"
+                    className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-all active:scale-95"
                   >
                     Cancel
                   </button>

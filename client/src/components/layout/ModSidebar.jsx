@@ -1,6 +1,6 @@
 // src/components/Sidebar.jsx
 import React, { useState } from "react";
-import { Activity, Users, FileText, Settings, LogOut, BoxIcon, BoxesIcon, Box, Home, ActivityIcon, ActivitySquare, RollerCoasterIcon, Accessibility, AccessibilityIcon, LucideAccessibility, LucideMonitorCheck, SaveOff, Settings2, Settings2Icon, SettingsIcon, LucideClipboardSignature, LucideClipboardList, LucideRotateCcwKey, ChevronDown } from "lucide-react";
+import { Activity, Users, FileText, Settings, LogOut, BoxIcon, BoxesIcon, Box, Home, ActivityIcon, ActivitySquare, RollerCoasterIcon, Accessibility, AccessibilityIcon, LucideAccessibility, LucideMonitorCheck, SaveOff, Settings2, Settings2Icon, SettingsIcon, LucideClipboardSignature, LucideClipboardList, LucideRotateCcwKey, ChevronDown, Mail } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom"; // Optional: better active link highlighting
 
 export default function ModSidebar() {
@@ -93,6 +93,18 @@ export default function ModSidebar() {
         >
           <LucideRotateCcwKey className="w-5 h-5" />
           <span>Request</span>
+        </NavLink>
+
+        <NavLink
+          to="/moderator/messages"
+          className={({ isActive }) =>
+            `flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
+              isActive ? "bg-orange-500 text-white shadow-lg" : "text-gray-700 hover:bg-gray-100"
+            }`
+          }
+        >
+          <Mail className="w-5 h-5" />
+          <span>Messages</span>
         </NavLink>
 
         <NavLink

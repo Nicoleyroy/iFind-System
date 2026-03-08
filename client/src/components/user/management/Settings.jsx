@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from "../../layout/navbar";
 import { API_ENDPOINTS } from '../../../utils/constants';
 import { uploadToCloudinary } from '../../../utils/cloudinary';
+import { error as swalError } from '../../../utils/swal';
 
 // Password Change Form Component
 function PasswordChangeForm({ userId, isGoogleAccount, onSuccess, onError }) {
@@ -185,9 +186,16 @@ function Settings() {
     return name.substring(0, 2).toUpperCase();
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+      if (!allowedTypes.includes(file.type)) {
+        await swalError('Invalid File Type', 'Photo must be JPG or PNG format.');
+        setProfilePictureFile(null);
+        return;
+      }
+      setError('');
       setProfilePictureFile(file);
       setProfilePicture(URL.createObjectURL(file));
     }
@@ -201,6 +209,24 @@ function Settings() {
     setUploading(true);
 
     try {
+      if (!formData.name.trim()) {
+        await swalError('Name Required', 'Please enter your name.');
+        setLoading(false);
+        setUploading(false);
+        return;
+      }
+
+      const normalizedPhone = String(formData.phoneNumber || '').trim();
+      if (normalizedPhone) {
+        const digits = normalizedPhone.replace(/[^0-9]/g, '');
+        if (digits.length < 10 || digits.length > 15) {
+          await swalError('Invalid Phone Number', 'Please enter a valid phone number with 10-15 digits.');
+          setLoading(false);
+          setUploading(false);
+          return;
+        }
+      }
+
       // Get user ID - check both _id and id fields
       const userId = user?._id || user?.id;
 
@@ -248,7 +274,12 @@ function Settings() {
       setSuccess('Profile updated successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(`Failed to update profile: ${err.message}`);
+      const fallbackMessage = 'Changes could not be saved. Try again.';
+      if (err && err.message === 'Failed to update profile') {
+        setError(fallbackMessage);
+      } else {
+        setError(err?.message || fallbackMessage);
+      }
     } finally {
       setLoading(false);
       setUploading(false);
@@ -270,7 +301,7 @@ function Settings() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-[#FCFCF9] px-4 py-8 sm:px-6 lg:px-8">
+      <main className="min-h-screen px-4 py-8 sm:px-6 lg:px-8" style={{ background: 'linear-gradient(to bottom right, #fff7ed, #fef2f2, #fffbeb)' }}>
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
             <h1 className="text-[#134252] text-3xl font-semibold">Profile</h1>
@@ -458,8 +489,8 @@ function Settings() {
                   <div className="mb-8">
                     <h3 className="text-[#134252] text-lg font-semibold mb-4">Change Password</h3>
                     {user?.googleId && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                        <p className="text-blue-800 text-sm">
+                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
+                        <p className="text-orange-800 text-sm">
                           Your account is linked to Google. If you have set a password, you can change it here. If you don't have a password yet, leave the current password field empty and set a new password.
                         </p>
                       </div>

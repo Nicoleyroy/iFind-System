@@ -5,6 +5,7 @@ import ForgotPassword from "./components/auth/ForgotPassword";
 import EnterCode from "./components/auth/EnterCode";
 import ResetPassword from "./components/auth/ResetPassword";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import Unauthorized from "./components/auth/Unauthorized";
 import App from "./App";
 import LostItemManagement from "./components/user/Lost-Item-Management";
 import FoundItems from "./components/user/Found-Item";
@@ -21,6 +22,7 @@ import ModLostItemManagement from "./components/Moderator/ModLostItemManagement"
 import ReportsDashboard from "./components/Moderator/ReportsDashboard";
 import ClaimTicketVerification from "./components/Moderator/ClaimTicketVerification";
 import ModeratorSettings from "./components/Moderator/ModeratorSettings";
+import Messages from "./components/Moderator/Messages";
 
 //Admin
 import AdminDashboard from "./components/Admin/AdminDashboard";
@@ -77,6 +79,7 @@ function Routes() {
         // Public Routes
         { path: "register", element: <Register /> },
         { path: "login", element: <Login /> },
+        { path: "unauthorized", element: <Unauthorized /> },
         { path: "forgot", element: <ForgotPassword /> },
         { path: "verify", element: <EnterCode /> },
         { path: "reset", element: <ResetPassword /> },
@@ -105,6 +108,10 @@ function Routes() {
         { 
           path: "moderator/settings", 
           element: <ProtectedRoute allowedRoles={['moderator', 'admin']}><ModeratorSettings /></ProtectedRoute> 
+        },
+        { 
+          path: "moderator/messages", 
+          element: <ProtectedRoute allowedRoles={['moderator', 'admin']}><Messages /></ProtectedRoute> 
         },
 
         // Admin Routes - Protected for admins only

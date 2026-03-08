@@ -56,11 +56,16 @@ export async function inputTextarea(title, html, inputPlaceholder = '', inputVal
     cancelButtonColor: '#6b7280',
     width: '600px',
     preConfirm: (value) => {
-      if (!value || !value.trim()) {
-        Swal.showValidationMessage('Please enter a message');
+      const normalized = String(value || '').trim();
+      if (!normalized) {
+        Swal.showValidationMessage('Message is required.');
         return false;
       }
-      return value;
+      if (normalized.length > 500) {
+        Swal.showValidationMessage('Message is too long.');
+        return false;
+      }
+      return normalized;
     }
   })
   if (result.isConfirmed) return result.value

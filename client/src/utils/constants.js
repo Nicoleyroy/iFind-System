@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const API_ENDPOINTS = {
   LOGIN: `${API_BASE_URL}/login`,
@@ -26,6 +26,9 @@ export const API_ENDPOINTS = {
   NOTIFICATION_READ: (id) => `${API_BASE_URL}/notifications/${id}/read`,
   NOTIFICATIONS_READ_ALL: `${API_BASE_URL}/notifications/read-all`,
   CONTACT_ITEM: (id) => `${API_BASE_URL}/api/items/${id}/contact`,
+  CONTACT_US: `${API_BASE_URL}/api/contact-us`,
+  MESSAGES: `${API_BASE_URL}/api/messages`,
+  MESSAGE_BY_ID: (id) => `${API_BASE_URL}/api/messages/${id}`,
   AUDIT_LOGS: `${API_BASE_URL}/audit-logs`,
   AUDIT_LOGS_STATS: `${API_BASE_URL}/audit-logs/stats`,
   BACKUP_CREATE: `${API_BASE_URL}/api/backup/create`,
@@ -33,6 +36,7 @@ export const API_ENDPOINTS = {
   BACKUP_STATS: `${API_BASE_URL}/api/backup/stats`,
   BACKUP_RESTORE: `${API_BASE_URL}/api/backup/restore`,
   BACKUP_DELETE: (fileName) => `${API_BASE_URL}/api/backup/${fileName}`,
+  SYSTEM_SETTINGS: `${API_BASE_URL}/api/system-settings`,
 };
 
 // reCAPTCHA Configuration

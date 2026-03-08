@@ -120,6 +120,30 @@ const Profile = () => {
     setLoading(true);
     
     try {
+      if (!editForm.name.trim()) {
+        setError('Item Name is required');
+        setLoading(false);
+        return;
+      }
+
+      if (editForm.date) {
+        const parsedDate = new Date(editForm.date);
+        if (isNaN(parsedDate.getTime())) {
+          setError('Invalid date format');
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (imageFile) {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+        if (!allowedTypes.includes(imageFile.type)) {
+          setError('Image must be JPG or PNG');
+          setLoading(false);
+          return;
+        }
+      }
+
       let imageUrl = editForm.imageUrl;
       
       if (imageFile) {
@@ -155,7 +179,11 @@ const Profile = () => {
       
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(`Failed to update: ${err.message}`);
+      if (err && err.message === 'Failed to update item') {
+        setError('Item could not be updated. Try again.');
+      } else {
+        setError(err?.message || 'Item could not be updated. Try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -190,7 +218,11 @@ const Profile = () => {
       
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(`Failed to delete: ${err.message}`);
+      if (err && err.message === 'Failed to delete item') {
+        setError('Item could not be deleted. Try again.');
+      } else {
+        setError(err?.message || 'Item could not be deleted. Try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -265,7 +297,11 @@ const Profile = () => {
       setSuccess('Item archived');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.message || 'Failed to archive');
+      if (err && err.message === 'Failed to archive item') {
+        setError('Item could not be archived. Try again.');
+      } else {
+        setError(err?.message || 'Item could not be archived. Try again.');
+      }
       setTimeout(() => setError(''), 4000);
     } finally {
       setMarkingId(null);
@@ -313,6 +349,15 @@ const Profile = () => {
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
+    if (file) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+      if (!allowedTypes.includes(file.type)) {
+        setError('Image must be JPG or PNG');
+        setImageFile(null);
+        return;
+      }
+      setError('');
+    }
     setImageFile(file ?? null);
   };
 
@@ -347,7 +392,7 @@ const Profile = () => {
     <>
       <Navbar />
       
-      <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <main className="min-h-screen" style={{ background: 'linear-gradient(to bottom right, #fff7ed, #fef2f2, #fffbeb)' }}>
         {/* Success/Error Messages */}
         {success && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
@@ -374,8 +419,8 @@ const Profile = () => {
           </div>
         )}
 
-        {/* Profile Header - Professional Style */}
-        <div className="bg-white shadow-sm border-b border-gray-200">
+        {/* Profile Header - Seamless with page background */}
+        <div className="" style={{ background: 'linear-gradient(to bottom right, #fff7ed, #fef2f2, #fffbeb)' }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="flex flex-col lg:flex-row gap-8">
               {/* Profile Picture */}
@@ -527,196 +572,200 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* Posts Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {displayedItems.length === 0 ? (
-              <div className="col-span-full">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-16 text-center">
-                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                    </svg>
+          {/* Posts Container */}
+          <div className="grid grid-cols-1 gap-6">
+            <div className="col-span-full">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8">
+                {displayedItems.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Posts Found</h3>
+                    <p className="text-gray-600 max-w-sm mx-auto">
+                      {search ? 'No posts found matching your search' : 'You haven\'t posted any items yet.'}
+                    </p>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No Posts Found</h3>
-                  <p className="text-gray-600 max-w-sm mx-auto">
-                    {search ? 'No items match your search criteria. Try adjusting your search terms.' : 'You haven\'t posted any items yet. Start by reporting a lost or found item.'}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              displayedItems.map((item) => (
-                <div
-                  key={item.id || item._id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg hover:border-gray-300 transition-all duration-200 flex flex-col"
-                >
-                  {/* Card Header */}
-                  <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        {user.profilePicture ? (
-                          <img
-                            src={user.profilePicture}
-                            alt={user.name}
-                            className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-sm font-bold border-2 border-white shadow-sm">
-                            {getInitials(user.name)}
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {displayedItems.map((item) => (
+                      <div
+                        key={item.id || item._id}
+                        className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg hover:border-gray-300 transition-all duration-200 flex flex-col"
+                      >
+                        {/* Card Header */}
+                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              {user.profilePicture ? (
+                                <img
+                                  src={user.profilePicture}
+                                  alt={user.name}
+                                  className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-sm font-bold border-2 border-white shadow-sm">
+                                  {getInitials(user.name)}
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <p className="font-semibold text-gray-900 text-sm truncate">{user.name}</p>
+                                <p className="text-xs text-gray-500">
+                                  {item.date ? new Date(item.date).toLocaleDateString('en-US', { 
+                                    month: 'short', 
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                  }) : 'No date'}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            {/* Actions Menu */}
+                            <div className="relative dropdown-menu-container">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenMenuId(openMenuId === (item._id || item.id) ? null : (item._id || item.id));
+                                }}
+                                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                                aria-label="More options"
+                              >
+                                <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                                </svg>
+                              </button>
+                              
+                              {openMenuId === (item._id || item.id) && (
+                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-20">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEdit(item);
+                                      setOpenMenuId(null);
+                                    }}
+                                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                                  >
+                                    <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                    <span className="font-medium">Edit Post</span>
+                                  </button>
+                                    {item.status !== 'Archived' ? (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleArchive(item);
+                                          setOpenMenuId(null);
+                                        }}
+                                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                                      >
+                                        <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v13a2 2 0 002 2h14a2 2 0 002-2V7M3 7l9-4 9 4" />
+                                        </svg>
+                                        <span className="font-medium">Archive Post</span>
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleRestore(item);
+                                          setOpenMenuId(null);
+                                        }}
+                                        className="w-full text-left px-4 py-2.5 text-sm text-green-600 hover:bg-green-50 flex items-center gap-3 transition-colors"
+                                      >
+                                        <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v13a2 2 0 002 2h14a2 2 0 002-2V7M16 3l-4 4-4-4" />
+                                        </svg>
+                                        <span className="font-medium">Restore Post</span>
+                                      </button>
+                                    )}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDeleteConfirm(item._id || item.id);
+                                      setOpenMenuId(null);
+                                    }}
+                                    className="w-full text-left px-4 py-2.5 text-sm text-orange-600 hover:bg-orange-50 flex items-center gap-3 transition-colors"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    <span className="font-medium">Delete Post</span>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Image */}
+                        {item.imageUrl && (
+                          <div className="aspect-video overflow-hidden bg-gray-100 mx-4 rounded-xl">
+                            <img 
+                              src={item.imageUrl} 
+                              alt={item.name} 
+                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" 
+                            />
                           </div>
                         )}
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-gray-900 text-sm truncate">{user.name}</p>
-                          <p className="text-xs text-gray-500">
-                            {item.date ? new Date(item.date).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric',
-                              year: 'numeric'
-                            }) : 'No date'}
-                          </p>
+
+                        {/* Card Content */}
+                        <div className="p-4 flex-1 flex flex-col">
+                          <h3 className="text-base font-bold text-gray-900 mb-2 line-clamp-2">{item.name}</h3>
+                          
+                          {item.location && (
+                            <div className="flex items-start gap-2 mb-3">
+                              <svg className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              <span className="text-sm text-gray-600 line-clamp-1">{item.location}</span>
+                            </div>
+                          )}
+                          
+                          {item.description && (
+                            <p className="text-sm text-gray-600 mb-4 line-clamp-3">{item.description}</p>
+                          )}
+                          
+                          {/* Footer - Status & Type */}
+                          <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100 gap-3">
+                            <div className="flex items-center gap-3">
+                              <span
+                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                                  item.status === 'Pending'
+                                    ? 'bg-amber-100 text-amber-800'
+                                    : item.status === 'Claimed' || item.status === 'Returned'
+                                    ? 'bg-green-100 text-green-800'
+                                    : 'bg-orange-100 text-orange-800'
+                                }`}
+                              >
+                                {item.status || 'Unclaimed'}
+                              </span>
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 capitalize">
+                                {item.type}
+                              </span>
+                            </div>
+
+                            {/* Mark Returned button: only show for lost items and only for the owner */}
+                            {item.type === 'lost' && (user && (user._id || user.id) === (item.userId?._id || item.userId?.id || item.userId)) && item.status !== 'Returned' && (
+                              <button
+                                onClick={() => handleMarkReturned(item)}
+                                disabled={loading && markingId === (item._id || item.id)}
+                                className={`px-3 py-1 rounded-md text-sm font-medium text-white ${markingId === (item._id || item.id) ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
+                              >
+                                {markingId === (item._id || item.id) ? 'Updating...' : 'Mark Returned'}
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      
-                      {/* Actions Menu */}
-                      <div className="relative dropdown-menu-container">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenMenuId(openMenuId === (item._id || item.id) ? null : (item._id || item.id));
-                          }}
-                          className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                          aria-label="More options"
-                        >
-                          <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                          </svg>
-                        </button>
-                        
-                        {openMenuId === (item._id || item.id) && (
-                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-20">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEdit(item);
-                                setOpenMenuId(null);
-                              }}
-                              className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
-                            >
-                              <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                              <span className="font-medium">Edit Post</span>
-                            </button>
-                              {item.status !== 'Archived' ? (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleArchive(item);
-                                    setOpenMenuId(null);
-                                  }}
-                                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
-                                >
-                                  <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v13a2 2 0 002 2h14a2 2 0 002-2V7M3 7l9-4 9 4" />
-                                  </svg>
-                                  <span className="font-medium">Archive Post</span>
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleRestore(item);
-                                    setOpenMenuId(null);
-                                  }}
-                                  className="w-full text-left px-4 py-2.5 text-sm text-green-600 hover:bg-green-50 flex items-center gap-3 transition-colors"
-                                >
-                                  <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v13a2 2 0 002 2h14a2 2 0 002-2V7M16 3l-4 4-4-4" />
-                                  </svg>
-                                  <span className="font-medium">Restore Post</span>
-                                </button>
-                              )}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDeleteConfirm(item._id || item.id);
-                                setOpenMenuId(null);
-                              }}
-                              className="w-full text-left px-4 py-2.5 text-sm text-orange-600 hover:bg-orange-50 flex items-center gap-3 transition-colors"
-                            >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                              <span className="font-medium">Delete Post</span>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    ))}
                   </div>
-
-                  {/* Image */}
-                  {item.imageUrl && (
-                    <div className="aspect-video overflow-hidden bg-gray-100">
-                      <img 
-                        src={item.imageUrl} 
-                        alt={item.name} 
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" 
-                      />
-                    </div>
-                  )}
-
-                  {/* Card Content */}
-                  <div className="p-4 flex-1 flex flex-col">
-                    <h3 className="text-base font-bold text-gray-900 mb-2 line-clamp-2">{item.name}</h3>
-                    
-                    {item.location && (
-                      <div className="flex items-start gap-2 mb-3">
-                        <svg className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <span className="text-sm text-gray-600 line-clamp-1">{item.location}</span>
-                      </div>
-                    )}
-                    
-                    {item.description && (
-                      <p className="text-sm text-gray-600 mb-4 line-clamp-3">{item.description}</p>
-                    )}
-                    
-                    {/* Footer - Status & Type */}
-                    <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100 gap-3">
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
-                            item.status === 'Pending'
-                              ? 'bg-amber-100 text-amber-800'
-                              : item.status === 'Claimed' || item.status === 'Returned'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-orange-100 text-orange-800'
-                          }`}
-                        >
-                          {item.status || 'Unclaimed'}
-                        </span>
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 capitalize">
-                          {item.type}
-                        </span>
-                      </div>
-
-                      {/* Mark Returned button: only show for lost items and only for the owner */}
-                      {item.type === 'lost' && (user && (user._id || user.id) === (item.userId?._id || item.userId?.id || item.userId)) && item.status !== 'Returned' && (
-                        <button
-                          onClick={() => handleMarkReturned(item)}
-                          disabled={loading && markingId === (item._id || item.id)}
-                          className={`px-3 py-1 rounded-md text-sm font-medium text-white ${markingId === (item._id || item.id) ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
-                        >
-                          {markingId === (item._id || item.id) ? 'Updating...' : 'Mark Returned'}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </main>

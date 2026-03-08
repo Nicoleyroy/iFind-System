@@ -206,13 +206,13 @@ const ModeratorDashboard = () => {
 
       <div className="flex-1 ml-64">
         {/* Compact Header with Gradient */}
-        <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white px-8 py-5">
+        <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white px-8 py-14">
           <div className="flex items-center justify-between">
             {/* Left: Title */}
             <div className="flex items-center gap-6">
               <div>
-                <h1 className="text-2xl font-bold">Moderator Dashboard</h1>
-                <p className="text-white/80 text-sm mt-0.5">Welcome back, {user?.name || 'Moderator'}</p>
+                <h1 className="text-3xl font-bold">Moderator Dashboard</h1>
+                <p className="text-white/85 text-base mt-1">Welcome back, {user?.name || 'Moderator'}</p>
               </div>
             </div>
 
@@ -311,6 +311,27 @@ const ModeratorDashboard = () => {
           {/* Dashboard Content */}
           {!loading && !error && (
             <>
+              {/* Alert for Pending Claims */}
+              {stats.pendingClaims > 0 && (
+                <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-yellow-900">Action Required</h3>
+                      <p className="text-sm text-yellow-800 mt-1">
+                        You have <span className="font-bold">{stats.pendingClaims}</span> pending claim{stats.pendingClaims !== 1 ? 's' : ''} waiting for review.
+                      </p>
+                      <button
+                        onClick={() => navigate('/moderator/item-verification')}
+                        className="mt-3 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium"
+                      >
+                        Review Now
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Stats Overview */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                 <StatCard
@@ -347,12 +368,12 @@ const ModeratorDashboard = () => {
               {/* Quick Actions */}
               <div className="mb-6">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
                   {quickActions.map((action, index) => (
                     <button
                       key={index}
                       onClick={() => navigate(action.link)}
-                      className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all text-left group"
+                      className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all text-left group flex flex-col h-full min-h-[150px]"
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className={`p-3 rounded-lg bg-${action.color}-100`}>
@@ -361,7 +382,7 @@ const ModeratorDashboard = () => {
                         <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-orange-600 transition-colors" />
                       </div>
                       <h3 className="font-semibold text-gray-900 mb-1">{action.title}</h3>
-                      <p className="text-sm text-gray-600">{action.description}</p>
+                      <p className="text-sm text-gray-600 mt-auto">{action.description}</p>
                     </button>
                   ))}
                 </div>
@@ -471,26 +492,6 @@ const ModeratorDashboard = () => {
                 </div>
               </div>
 
-              {/* Alert for Pending Claims */}
-              {stats.pendingClaims > 0 && (
-                <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-yellow-900">Action Required</h3>
-                      <p className="text-sm text-yellow-800 mt-1">
-                        You have <span className="font-bold">{stats.pendingClaims}</span> pending claim{stats.pendingClaims !== 1 ? 's' : ''} waiting for review.
-                      </p>
-                      <button
-                        onClick={() => navigate('/moderator/item-verification')}
-                        className="mt-3 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium"
-                      >
-                        Review Now
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </>
           )}
         </main>

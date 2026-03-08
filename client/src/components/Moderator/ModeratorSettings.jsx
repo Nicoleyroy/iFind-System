@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import ModSidebar from '../layout/ModSidebar';
 import { API_ENDPOINTS } from '../../utils/constants';
 import { uploadToCloudinary } from '../../utils/cloudinary';
+import { error as swalError } from '../../utils/swal';
 
 // --- Password Change Form ---
 function PasswordChangeForm({ userId, isGoogleAccount, onSuccess, onError }) {
@@ -155,9 +156,16 @@ function ModeratorSettings() {
   };
 
   // Handle profile picture change
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+      if (!allowedTypes.includes(file.type)) {
+        await swalError('Invalid File Type', 'Photo must be JPG or PNG format.');
+        setProfilePictureFile(null);
+        return;
+      }
+      setError('');
       setProfilePictureFile(file);
       setProfilePicture(URL.createObjectURL(file));
     }
@@ -173,6 +181,24 @@ function ModeratorSettings() {
     try {
       const userId = user?._id || user?.id;
       if (!user || !userId) throw new Error('User not found. Please log in again.');
+
+      if (!formData.name.trim()) {
+        await swalError('Name Required', 'Please enter your name.');
+        setLoading(false);
+        setUploading(false);
+        return;
+      }
+
+      const normalizedPhone = String(formData.phoneNumber || '').trim();
+      if (normalizedPhone) {
+        const digits = normalizedPhone.replace(/[^0-9]/g, '');
+        if (digits.length < 10 || digits.length > 15) {
+          await swalError('Invalid Phone Number', 'Please enter a valid phone number with 10-15 digits.');
+          setLoading(false);
+          setUploading(false);
+          return;
+        }
+      }
       let profilePictureUrl = profilePicture;
       if (profilePictureFile) {
         try {
@@ -199,7 +225,12 @@ function ModeratorSettings() {
       setSuccess('Profile updated successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(`Failed to update profile: ${err.message}`);
+      const fallbackMessage = 'Changes could not be saved. Try again.';
+      if (err && err.message === 'Failed to update profile') {
+        setError(fallbackMessage);
+      } else {
+        setError(err?.message || fallbackMessage);
+      }
     } finally {
       setLoading(false);
       setUploading(false);

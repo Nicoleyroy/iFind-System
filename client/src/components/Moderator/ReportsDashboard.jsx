@@ -186,12 +186,12 @@ export default function ReportsDashboard() {
       
       <div className="flex-1 ml-64">
         {/* Compact Header with Gradient */}
-        <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white px-8 py-5">
+        <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white px-8 py-14">
           <div className="flex items-center justify-between">
             {/* Left: Title */}
             <div>
-              <h1 className="text-2xl font-bold">Reports & Analytics</h1>
-              <p className="text-white/80 text-sm mt-0.5">Monitor performance and generate detailed reports</p>
+              <h1 className="text-3xl font-bold">Reports & Analytics</h1>
+              <p className="text-white/85 text-base mt-1">Monitor performance and generate detailed reports</p>
             </div>
 
             {/* Right: Export Button & Profile */}

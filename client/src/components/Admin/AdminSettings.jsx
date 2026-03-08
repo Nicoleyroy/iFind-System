@@ -48,12 +48,34 @@ const AdminSettings = () => {
     allowRegistration: true,
     requireEmailVerification: true,
   });
-  // Load system settings from localStorage on mount
+  
+  const [loadingSettings, setLoadingSettings] = useState(true);
+
+  // Load system settings from API on mount
   useEffect(() => {
-    const savedSettings = localStorage.getItem('admin_system_settings');
-    if (savedSettings) {
-      setSystemSettings(JSON.parse(savedSettings));
-    }
+    const fetchSystemSettings = async () => {
+      try {
+        const response = await fetch(API_ENDPOINTS.SYSTEM_SETTINGS);
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setSystemSettings({
+              siteName: result.data.siteName || 'iFind Lost & Found',
+              siteDescription: result.data.siteDescription || 'Campus Lost and Found Management System',
+              maintenanceMode: result.data.maintenanceMode || false,
+              allowRegistration: result.data.allowRegistration !== undefined ? result.data.allowRegistration : true,
+              requireEmailVerification: result.data.requireEmailVerification !== undefined ? result.data.requireEmailVerification : true,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching system settings:', error);
+      } finally {
+        setLoadingSettings(false);
+      }
+    };
+    
+    fetchSystemSettings();
   }, []);
 
   // (Drive helpers removed from Admin - Drive is handled by Moderator settings)
@@ -180,6 +202,22 @@ const AdminSettings = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      if (!String(profileData.name || '').trim()) {
+        await swalError('Name Required', 'Please enter your name.');
+        setLoading(false);
+        return;
+      }
+
+      const normalizedPhone = String(profileData.phoneNumber || '').trim();
+      if (normalizedPhone) {
+        const digits = normalizedPhone.replace(/[^0-9]/g, '');
+        if (digits.length < 10 || digits.length > 15) {
+          await swalError('Invalid Phone Number', 'Please enter a valid phone number with 10-15 digits.');
+          setLoading(false);
+          return;
+        }
+      }
+
       const response = await fetch(API_ENDPOINTS.USER_BY_ID(currentUser._id || currentUser.id), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -198,11 +236,11 @@ const AdminSettings = () => {
         showSaveMessage('success', 'Profile updated successfully!');
       } else {
         const error = await response.json();
-        showSaveMessage('error', error.message || 'Failed to update profile.');
+        showSaveMessage('error', error.message || 'Changes could not be saved. Try again.');
       }
     } catch (error) {
       console.error('Profile update error:', error);
-      showSaveMessage('error', 'An error occurred while updating profile.');
+      showSaveMessage('error', 'Changes could not be saved. Try again.');
     } finally {
       setLoading(false);
     }
@@ -213,14 +251,15 @@ const AdminSettings = () => {
     if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith('image/')) {
-      showSaveMessage('error', 'Please upload an image file');
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowedTypes.includes(file.type)) {
+      await swalError('Invalid File Type', 'Photo must be JPG or PNG format.');
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      showSaveMessage('error', 'Image size must be less than 5MB');
+      await swalError('File Too Large', 'Image size must be less than 5MB.');
       return;
     }
 
@@ -289,15 +328,34 @@ const AdminSettings = () => {
     }
   };
 
-  const handleSaveSystemSettings = () => {
+  const handleSaveSystemSettings = async () => {
     setLoading(true);
-    setTimeout(() => {
-      localStorage.setItem('admin_system_settings', JSON.stringify(systemSettings));
-      // Update document title if site name changed
-      document.title = systemSettings.siteName;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(API_ENDPOINTS.SYSTEM_SETTINGS, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(systemSettings),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // Update document title if site name changed
+        document.title = systemSettings.siteName;
+        await swalSuccess('Success', 'System settings saved successfully!');
+      } else {
+        await swalError('Error', result.message || 'Failed to save system settings');
+      }
+    } catch (error) {
+      console.error('Error saving system settings:', error);
+      await swalError('Error', 'An error occurred while saving system settings');
+    } finally {
       setLoading(false);
-      showSaveMessage('success', 'System settings saved successfully!');
-    }, 500);
+    }
   };
 
   const handleManualBackup = async () => {
@@ -560,58 +618,67 @@ const AdminSettings = () => {
               {activeTab === 'general' && (
                 <div className="space-y-6">
                   <h3 className="text-lg font-semibold text-gray-900">System Settings</h3>
-                  <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">Site Name</label>
-                      <input
-                        type="text"
-                        value={systemSettings.siteName}
-                        onChange={(e) => setSystemSettings({ ...systemSettings, siteName: e.target.value })}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      />
+                  {loadingSettings ? (
+                    <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mb-4"></div>
+                      <p className="text-gray-600">Loading system settings...</p>
                     </div>
+                  ) : (
+                    <>
+                      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-900 mb-2">Site Name</label>
+                          <input
+                            type="text"
+                            value={systemSettings.siteName}
+                            onChange={(e) => setSystemSettings({ ...systemSettings, siteName: e.target.value })}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          />
+                        </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">Site Description</label>
-                      <textarea
-                        rows="3"
-                        value={systemSettings.siteDescription}
-                        onChange={(e) => setSystemSettings({ ...systemSettings, siteDescription: e.target.value })}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      />
-                    </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-900 mb-2">Site Description</label>
+                          <textarea
+                            rows="3"
+                            value={systemSettings.siteDescription}
+                            onChange={(e) => setSystemSettings({ ...systemSettings, siteDescription: e.target.value })}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          />
+                        </div>
 
-                    <Toggle
-                      enabled={systemSettings.maintenanceMode}
-                      onChange={(val) => setSystemSettings({ ...systemSettings, maintenanceMode: val })}
-                      label="Maintenance Mode"
-                      description="Enable maintenance mode to prevent user access"
-                    />
+                        <Toggle
+                          enabled={systemSettings.maintenanceMode}
+                          onChange={(val) => setSystemSettings({ ...systemSettings, maintenanceMode: val })}
+                          label="Maintenance Mode"
+                          description="Enable maintenance mode to prevent user access"
+                        />
 
-                    <Toggle
-                      enabled={systemSettings.allowRegistration}
-                      onChange={(val) => setSystemSettings({ ...systemSettings, allowRegistration: val })}
-                      label="Allow User Registration"
-                      description="Allow new users to register accounts"
-                    />
+                        <Toggle
+                          enabled={systemSettings.allowRegistration}
+                          onChange={(val) => setSystemSettings({ ...systemSettings, allowRegistration: val })}
+                          label="Allow User Registration"
+                          description="Allow new users to register accounts"
+                        />
 
-                    <Toggle
-                      enabled={systemSettings.requireEmailVerification}
-                      onChange={(val) => setSystemSettings({ ...systemSettings, requireEmailVerification: val })}
-                      label="Require Email Verification"
-                      description="Users must verify their email before accessing the system"
-                    />
-                  </div>
+                        <Toggle
+                          enabled={systemSettings.requireEmailVerification}
+                          onChange={(val) => setSystemSettings({ ...systemSettings, requireEmailVerification: val })}
+                          label="Require Email Verification"
+                          description="Users must verify their email before accessing the system"
+                        />
+                      </div>
 
-                  <div className="flex justify-end">
-                    <button
-                      onClick={handleSaveSystemSettings}
-                      disabled={loading}
-                      className="px-6 py-2.5 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 transition-colors"
-                    >
-                      {loading ? 'Saving...' : 'Save Settings'}
-                    </button>
-                  </div>
+                      <div className="flex justify-end">
+                        <button
+                          onClick={handleSaveSystemSettings}
+                          disabled={loading}
+                          className="px-6 py-2.5 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 transition-colors"
+                        >
+                          {loading ? 'Saving...' : 'Save Settings'}
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 

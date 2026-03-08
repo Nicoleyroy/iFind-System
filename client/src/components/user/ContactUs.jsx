@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import Navbar from "../layout/navbar";
+import { API_ENDPOINTS } from '../../utils/constants';
 
 const ContactUs = () => {
   const [formData, setFormData] = useState({
@@ -19,31 +20,27 @@ const ContactUs = () => {
 
     // Name validation
     if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
+      newErrors.name = 'Full Name is required.';
     }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = 'Email Address is required.';
     } else if (!emailRegex.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = 'Please enter a valid email address.';
     }
 
     // Subject validation
     if (!formData.subject.trim()) {
-      newErrors.subject = 'Subject is required';
-    } else if (formData.subject.trim().length < 3) {
-      newErrors.subject = 'Subject must be at least 3 characters';
+      newErrors.subject = 'Subject is required.';
     }
 
     // Message validation
     if (!formData.message.trim()) {
-      newErrors.message = 'Message is required';
-    } else if (formData.message.trim().length < 10) {
-      newErrors.message = 'Message must be at least 10 characters';
+      newErrors.message = 'Message is required.';
+    } else if (formData.message.trim().length > 500) {
+      newErrors.message = 'Message is too long.';
     }
 
     setErrors(newErrors);
@@ -79,15 +76,17 @@ const ContactUs = () => {
     setSubmitStatus(null);
 
     try {
-      // Simulate API call - Replace with actual backend endpoint
-      // const response = await fetch('/api/contact', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData)
-      // });
+      const response = await fetch(API_ENDPOINTS.CONTACT_US, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
 
-      // Simulate successful submission
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to send message');
+      }
 
       setSubmitStatus('success');
       // Reset form
@@ -120,25 +119,25 @@ const ContactUs = () => {
     <>
       <Navbar />
       
-      <main className="min-h-screen bg-[#FCFCF9] px-4 py-8 sm:px-6 lg:px-8">
+      <main className="min-h-screen px-3 py-6 sm:px-6 sm:py-8 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-[#134252] mb-4">
+          <div className="text-center mb-8 sm:mb-12">
+            <h1 className="text-3xl sm:text-4xl font-bold text-[#134252] mb-3 sm:mb-4">
               Contact Us
             </h1>
-            <p className="text-lg text-[#626C71] max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg text-[#626C71] max-w-2xl mx-auto px-4">
               Have a question or need help? We're here to assist you. Send us a message and we'll respond as soon as possible.
             </p>
           </div>
 
           {/* Success/Error Messages */}
           {submitStatus === 'success' && (
-            <div className="max-w-3xl mx-auto mb-6 bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3 animate-fadeIn">
-              <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+            <div className="max-w-3xl mx-auto mb-4 sm:mb-6 bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 flex items-start gap-2 sm:gap-3 animate-fadeIn">
+              <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-semibold text-green-900 mb-1">Message Sent Successfully!</h3>
-                <p className="text-sm text-green-700">
+                <h3 className="font-semibold text-green-900 mb-1 text-sm sm:text-base">Message Sent Successfully!</h3>
+                <p className="text-xs sm:text-sm text-green-700">
                   Thank you for contacting us. We've received your message and will get back to you within 24-48 hours.
                 </p>
               </div>
@@ -146,37 +145,37 @@ const ContactUs = () => {
           )}
 
           {submitStatus === 'error' && (
-            <div className="max-w-3xl mx-auto mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3 animate-fadeIn">
-              <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="max-w-3xl mx-auto mb-4 sm:mb-6 bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 flex items-start gap-2 sm:gap-3 animate-fadeIn">
+              <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-semibold text-red-900 mb-1">Error Sending Message</h3>
-                <p className="text-sm text-red-700">
+                <h3 className="font-semibold text-red-900 mb-1 text-sm sm:text-base">Error Sending Message</h3>
+                <p className="text-xs sm:text-sm text-red-700">
                   Sorry, there was an error sending your message. Please try again or contact us directly using the information below.
                 </p>
               </div>
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
             {/* Contact Information */}
-            <div className="lg:col-span-1 space-y-6">
+            <div className="lg:col-span-1 space-y-4 sm:space-y-6">
               {/* Contact Details Card */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-semibold text-[#134252] mb-4">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-semibold text-[#134252] mb-3 sm:mb-4">
                   Contact Information
                 </h2>
                 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {/* Email */}
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-orange-50 rounded-lg">
+                    <div className="p-2 bg-orange-50 rounded-lg shrink-0">
                       <Mail className="w-5 h-5 text-orange-500" />
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <h3 className="text-sm font-semibold text-[#134252] mb-1">Email</h3>
                       <a 
                         href="mailto:support@ifind.com" 
-                        className="text-sm text-[#626C71] hover:text-orange-500 transition-colors"
+                        className="text-sm text-[#626C71] hover:text-orange-500 transition-colors wrap-break-word"
                       >
                         support@ifind.com
                       </a>
@@ -185,10 +184,10 @@ const ContactUs = () => {
 
                   {/* Phone */}
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-orange-50 rounded-lg">
+                    <div className="p-2 bg-orange-50 rounded-lg shrink-0">
                       <Phone className="w-5 h-5 text-orange-500" />
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <h3 className="text-sm font-semibold text-[#134252] mb-1">Phone</h3>
                       <a 
                         href="tel:+1234567890" 
@@ -201,10 +200,10 @@ const ContactUs = () => {
 
                   {/* Address */}
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-orange-50 rounded-lg">
+                    <div className="p-2 bg-orange-50 rounded-lg shrink-0">
                       <MapPin className="w-5 h-5 text-orange-500" />
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <h3 className="text-sm font-semibold text-[#134252] mb-1">Office</h3>
                       <p className="text-sm text-[#626C71]">
                         Bukidnon State University<br />
@@ -217,20 +216,20 @@ const ContactUs = () => {
               </div>
 
               {/* Office Hours */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-semibold text-[#134252] mb-4">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-semibold text-[#134252] mb-3 sm:mb-4">
                   Office Hours
                 </h2>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between gap-4">
                     <span className="text-[#626C71]">Monday - Friday</span>
                     <span className="font-medium text-[#134252]">8:00 AM - 5:00 PM</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between gap-4">
                     <span className="text-[#626C71]">Saturday</span>
                     <span className="font-medium text-[#134252]">9:00 AM - 2:00 PM</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between gap-4">
                     <span className="text-[#626C71]">Sunday</span>
                     <span className="font-medium text-[#134252]">Closed</span>
                   </div>
@@ -240,12 +239,12 @@ const ContactUs = () => {
 
             {/* Contact Form */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-                <h2 className="text-2xl font-semibold text-[#134252] mb-6">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-8">
+                <h2 className="text-xl sm:text-2xl font-semibold text-[#134252] mb-4 sm:mb-6">
                   Send us a Message
                 </h2>
 
-                <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+                <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6" noValidate>
                   {/* Name Field */}
                   <div>
                     <label 
@@ -260,7 +259,7 @@ const ContactUs = () => {
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
-                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
+                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all min-h-11 text-sm sm:text-base ${
                         errors.name
                           ? 'border-red-300 focus:ring-red-200 focus:border-red-500'
                           : 'border-[#5E5240]/20 focus:ring-[#21808D]/20 focus:border-[#21808D]'
@@ -272,7 +271,7 @@ const ContactUs = () => {
                     />
                     {errors.name && (
                       <p id="name-error" className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                        <AlertCircle className="w-4 h-4" />
+                        <AlertCircle className="w-4 h-4 shrink-0" />
                         {errors.name}
                       </p>
                     )}
@@ -292,7 +291,7 @@ const ContactUs = () => {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
+                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all min-h-11 text-sm sm:text-base ${
                         errors.email
                           ? 'border-red-300 focus:ring-red-200 focus:border-red-500'
                           : 'border-[#5E5240]/20 focus:ring-[#21808D]/20 focus:border-[#21808D]'
@@ -304,7 +303,7 @@ const ContactUs = () => {
                     />
                     {errors.email && (
                       <p id="email-error" className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                        <AlertCircle className="w-4 h-4" />
+                        <AlertCircle className="w-4 h-4 shrink-0" />
                         {errors.email}
                       </p>
                     )}
@@ -324,7 +323,7 @@ const ContactUs = () => {
                       name="subject"
                       value={formData.subject}
                       onChange={handleChange}
-                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
+                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all min-h-11 text-sm sm:text-base ${
                         errors.subject
                           ? 'border-red-300 focus:ring-red-200 focus:border-red-500'
                           : 'border-[#5E5240]/20 focus:ring-[#21808D]/20 focus:border-[#21808D]'
@@ -336,7 +335,7 @@ const ContactUs = () => {
                     />
                     {errors.subject && (
                       <p id="subject-error" className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                        <AlertCircle className="w-4 h-4" />
+                        <AlertCircle className="w-4 h-4 shrink-0" />
                         {errors.subject}
                       </p>
                     )}
@@ -356,7 +355,7 @@ const ContactUs = () => {
                       value={formData.message}
                       onChange={handleChange}
                       rows={6}
-                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all resize-none ${
+                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all resize-none text-sm sm:text-base ${
                         errors.message
                           ? 'border-red-300 focus:ring-red-200 focus:border-red-500'
                           : 'border-[#5E5240]/20 focus:ring-[#21808D]/20 focus:border-[#21808D]'
@@ -368,7 +367,7 @@ const ContactUs = () => {
                     />
                     {errors.message && (
                       <p id="message-error" className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                        <AlertCircle className="w-4 h-4" />
+                        <AlertCircle className="w-4 h-4 shrink-0" />
                         {errors.message}
                       </p>
                     )}
@@ -378,14 +377,14 @@ const ContactUs = () => {
                   </div>
 
                   {/* Submit Button */}
-                  <div className="flex items-center justify-between pt-4">
-                    <p className="text-sm text-[#626C71]">
+                  <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 pt-2 sm:pt-4">
+                    <p className="text-xs sm:text-sm text-[#626C71] text-center sm:text-left">
                       <span className="text-orange-500">*</span> Required fields
                     </p>
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium text-white transition-all shadow-sm hover:shadow ${
+                      className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium text-white transition-all shadow-sm hover:shadow min-h-11 text-sm sm:text-base ${
                         isSubmitting
                           ? 'bg-gray-400 cursor-not-allowed'
                           : 'bg-orange-500 hover:bg-orange-600 active:bg-orange-700'
@@ -411,40 +410,40 @@ const ContactUs = () => {
           </div>
 
           {/* FAQ Section */}
-          <div className="mt-12 bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-            <h2 className="text-2xl font-semibold text-[#134252] mb-6">
+          <div className="mt-8 sm:mt-12 bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-8">
+            <h2 className="text-xl sm:text-2xl font-semibold text-[#134252] mb-4 sm:mb-6">
               Frequently Asked Questions
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <div>
-                <h3 className="font-semibold text-[#134252] mb-2">
+                <h3 className="font-semibold text-[#134252] mb-2 text-sm sm:text-base">
                   How quickly will I receive a response?
                 </h3>
-                <p className="text-sm text-[#626C71]">
+                <p className="text-xs sm:text-sm text-[#626C71]">
                   We typically respond to all inquiries within 24-48 hours during business days. Urgent matters may receive faster attention.
                 </p>
               </div>
               <div>
-                <h3 className="font-semibold text-[#134252] mb-2">
+                <h3 className="font-semibold text-[#134252] mb-2 text-sm sm:text-base">
                   Can I report a found item through this form?
                 </h3>
-                <p className="text-sm text-[#626C71]">
+                <p className="text-xs sm:text-sm text-[#626C71]">
                   For reporting found or lost items, please use the dedicated "Report Item" feature on our platform for faster processing.
                 </p>
               </div>
               <div>
-                <h3 className="font-semibold text-[#134252] mb-2">
+                <h3 className="font-semibold text-[#134252] mb-2 text-sm sm:text-base">
                   What if I need immediate assistance?
                 </h3>
-                <p className="text-sm text-[#626C71]">
+                <p className="text-xs sm:text-sm text-[#626C71]">
                   For urgent matters, please call our support line at +1 (234) 567-8900 during office hours.
                 </p>
               </div>
               <div>
-                <h3 className="font-semibold text-[#134252] mb-2">
+                <h3 className="font-semibold text-[#134252] mb-2 text-sm sm:text-base">
                   Is my information secure?
                 </h3>
-                <p className="text-sm text-[#626C71]">
+                <p className="text-xs sm:text-sm text-[#626C71]">
                   Yes, all information submitted through this form is encrypted and handled according to our privacy policy.
                 </p>
               </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems, Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { API_ENDPOINTS } from '../../utils/constants'
 import Swal from 'sweetalert2'
@@ -22,6 +22,7 @@ function classNames(...classes) {
 
 function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState({
     name: 'User',
     email: 'user@example.com',
@@ -222,7 +223,7 @@ function Navbar() {
 
   return (
     <div className="min-h-full">
-        <Disclosure as="nav" className="bg-white shadow-md border-b border-gray-200">
+        <Disclosure as="nav" className="relative z-50 bg-white shadow-md">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex h-16 items-center justify-between">
               <div className="flex items-center">
@@ -241,9 +242,9 @@ function Navbar() {
                         end
                         className={({ isActive }) =>
                           classNames(
-                            isActive
-                              ? 'bg-orange-50 text-orange-600 shadow-sm'
-                              : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900',
+                            ((item.name === 'Home' ? (location.pathname.startsWith('/found') || location.pathname.startsWith('/lost')) : isActive))
+                              ? 'text-orange-600'
+                              : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600',
                             'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
                           )
                         }
@@ -431,7 +432,9 @@ function Navbar() {
                   end
                   className={({ isActive }) =>
                     classNames(
-                      isActive ? 'text-orange-600 bg-orange-50 border-l-4 border-orange-600 pl-2' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900',
+                      ((item.name === 'Home' ? (location.pathname.startsWith('/found') || location.pathname.startsWith('/lost')) : isActive))
+                        ? 'text-orange-600 border-l-4 border-orange-600 pl-2'
+                        : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600',
                       'block rounded-md px-3 py-2 text-base font-medium',
                     )
                   }
@@ -550,9 +553,6 @@ function Navbar() {
             </div>
           </DisclosurePanel>
         </Disclosure>
-        <main>
-          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">{/* Your content */}</div>
-        </main>
       </div>
   );
 }

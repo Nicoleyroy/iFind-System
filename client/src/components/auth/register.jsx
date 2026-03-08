@@ -22,6 +22,18 @@ const Register = () => {
     e.preventDefault();
     setError("");
     setSuccess(false);
+
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.confirmPassword) {
+      setError("Please fill out all required fields.");
+      return;
+    }
+
+    const emailValue = String(formData.email).toLowerCase().trim();
+    const emailPattern = /^\S+@\S+\.\S+$/;
+    if (!emailPattern.test(emailValue)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
     
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match!");
@@ -31,7 +43,7 @@ const Register = () => {
     // Combine first and last name to match backend
     const payload = {
       name: `${formData.firstName} ${formData.lastName}`,
-      email: formData.email,
+      email: emailValue,
       password: formData.password,
     };
 
@@ -58,8 +70,8 @@ const Register = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100 items-center justify-center p-4">
-      <div className="flex w-full max-w-5xl bg-white shadow-2xl rounded-3xl overflow-hidden">
+    <div className="flex min-h-screen bg-gray-100 items-center justify-center p-2 sm:p-4">
+      <div className="flex flex-col md:flex-row w-full max-w-5xl bg-white shadow-2xl rounded-2xl md:rounded-3xl overflow-hidden">
         {/* LEFT - Gradient Welcome */}
         <div className="hidden md:flex w-1/2 bg-gradient-to-b from-orange-500 via-orange-600 to-orange-700 text-white flex-col items-center justify-center p-10 ">
           <h2 className="text-4xl font-bold mb-2">Welcome Back!</h2>
@@ -72,19 +84,19 @@ const Register = () => {
         </div>
 
         {/* RIGHT - Form */}
-        <div className="w-full md:w-1/2 p-10">
-          <h1 className="text-3xl font-bold text-gray-800 mb-6">
+        <div className="w-full md:w-1/2 p-6 sm:p-10">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-6">
             Create your account
           </h1>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
                 name="firstName"
                 placeholder="First Name"
                 onChange={handleChange}
                 required
-                className="w-1/2 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                className="w-full sm:w-1/2 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
               />
               <input
                 type="text"
@@ -92,7 +104,7 @@ const Register = () => {
                 placeholder="Last Name"
                 onChange={handleChange}
                 required
-                className="w-1/2 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                className="w-full sm:w-1/2 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
               />
             </div>
             <input
@@ -127,7 +139,7 @@ const Register = () => {
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                   <div>
-                    <p className="font-semibold">Account created successfully!</p>
+                    <p className="font-semibold">Account Created Successfully!</p>
                     <p className="text-sm">Redirecting to login page...</p>
                   </div>
                 </div>
@@ -147,6 +159,16 @@ const Register = () => {
               {success ? 'Account Created!' : 'Create account'}
             </button>
           </form>
+
+          {/* Mobile Login Link */}
+          <div className="mt-6 text-center md:hidden">
+            <p className="text-gray-600 text-sm">
+              Already have an account?{' '}
+              <Link to="/login" className="text-orange-500 font-semibold hover:text-orange-600">
+                Log in
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>
