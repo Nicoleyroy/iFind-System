@@ -8,6 +8,11 @@ package-lock.json
 .env.*.local
 config.env
 
+# Sensitive files with credentials
+server/mongodb.js
+server/drive_credentials.json
+drive_credentials.json
+
 # Build outputs
 dist/
 build/

@@ -1,0 +1,6 @@
+.env
+config.env
+node_modules
+mongodb.js
+drive_credentials.json
+*.log
