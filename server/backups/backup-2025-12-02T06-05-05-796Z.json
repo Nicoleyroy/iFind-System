@@ -1,0 +1,1143 @@
+{
+  "metadata": {
+    "timestamp": "2025-12-02T06:05:06.253Z",
+    "version": "1.0",
+    "databaseName": "ifind-test",
+    "createdBy": "system"
+  },
+  "collections": {
+    "users": [
+      {
+        "_id": "690ee09372b6d98958c1ac6d",
+        "name": "JOANNA NICOLE YROY",
+        "email": "joannanicoleyroy24@gmail.com",
+        "password": "newSecurePassword123",
+        "__v": 0,
+        "phoneNumber": "",
+        "profilePicture": "https://res.cloudinary.com/dotlg3hum/image/upload/v1762742090/vnsjrvxdnioxphwgk8vt.jpg",
+        "updatedAt": "2025-12-02T05:47:20.831Z",
+        "accountStatus": "active",
+        "role": "user"
+      },
+      {
+        "_id": "690eff1dc8c5285157d24bb2",
+        "name": "JOANNA NICOLE PARREÑO YROY",
+        "email": "2301110148@student.buksu.edu.ph",
+        "password": "joanna",
+        "__v": 0,
+        "phoneNumber": "0906648845635",
+        "profilePicture": "https://res.cloudinary.com/dotlg3hum/image/upload/v1764583552/ne3vfx8farpddofxwv3l.png",
+        "updatedAt": "2025-12-01T10:06:03.889Z",
+        "accountStatus": "active",
+        "role": "admin"
+      },
+      {
+        "_id": "690f4b6a1fbc5fe79af37b53",
+        "name": "CHESNA ZULIEKA YROY",
+        "email": "chesnayroy2016@gmail.com",
+        "password": "12",
+        "__v": 0
+      },
+      {
+        "_id": "690fdc7addf4d2e097680ae2",
+        "name": "Dexter Peralta",
+        "email": "2301107739@student.buksu.edu.ph",
+        "password": "dex",
+        "__v": 0,
+        "phoneNumber": "0921354648",
+        "profilePicture": "https://res.cloudinary.com/dotlg3hum/image/upload/v1762743066/z1viynzqxpougawclxt6.jpg",
+        "updatedAt": "2025-11-10T02:57:27.019Z"
+      },
+      {
+        "_id": "69101c8acf08cb93ee482717",
+        "name": "Keith Andre Barcelon",
+        "email": "2301104852@student.buksu.edu.ph",
+        "password": "123123",
+        "createdAt": "2025-11-09T04:46:02.012Z",
+        "updatedAt": "2025-12-02T01:36:39.528Z",
+        "__v": 0,
+        "phoneNumber": "09971980382",
+        "profilePicture": "https://res.cloudinary.com/dotlg3hum/image/upload/v1762745042/ewvj9w5aenmlqej79aqu.jpg",
+        "googleId": "103065505340985670317",
+        "role": "admin",
+        "accountStatus": "active"
+      },
+      {
+        "_id": "6910ad094c4b480a482f9fef",
+        "name": "Nicole Yroy",
+        "email": "jnicole11121024@gmail.com",
+        "password": "qazwsx",
+        "__v": 0
+      },
+      {
+        "_id": "69111ed7a61c80635a46fee2",
+        "name": "Chijay Canoy",
+        "email": "chijaycanoy19@gmail.com",
+        "password": "123123",
+        "createdAt": "2025-11-09T23:08:07.979Z",
+        "updatedAt": "2025-11-09T23:08:07.979Z",
+        "__v": 0
+      },
+      {
+        "_id": "6915eb40d494ea5724934b98",
+        "name": "Nicole",
+        "email": "nicole072420@gmail.com",
+        "password": "123456",
+        "createdAt": "2025-11-13T14:29:20.927Z",
+        "updatedAt": "2025-11-23T05:32:30.266Z",
+        "__v": 0,
+        "phoneNumber": "",
+        "profilePicture": "https://res.cloudinary.com/dotlg3hum/image/upload/v1763875948/enchb7qlndlhijfrwebf.png",
+        "accountStatus": "active",
+        "role": "admin"
+      },
+      {
+        "_id": "6916bdf921f8296b4d020372",
+        "name": "AJ YROY",
+        "email": "ajyroy0724@gmail.com",
+        "password": "123456",
+        "createdAt": "2025-11-14T05:28:25.564Z",
+        "updatedAt": "2025-11-14T05:28:25.564Z",
+        "__v": 0
+      },
+      {
+        "_id": "6916ce4cf09d7cd000f46785",
+        "name": "Zoe Ayumi",
+        "email": "zoeayumi07@gmail.com",
+        "googleId": "111844380554678840587",
+        "profilePicture": "https://lh3.googleusercontent.com/a/ACg8ocKa8mBZdcGZEAiH1YYrzF51BpTqt6oz-4jfACYQE0MF126ayjk=s96-c",
+        "createdAt": "2025-11-14T06:38:04.438Z",
+        "updatedAt": "2025-11-23T05:10:29.263Z",
+        "__v": 0,
+        "role": "moderator",
+        "accountStatus": "active"
+      },
+      {
+        "_id": "691e716a2cb4f3563b6e9878",
+        "name": "Vissy",
+        "email": "vis.jpeg@gmail.com",
+        "googleId": "106470205673582511025",
+        "profilePicture": "https://lh3.googleusercontent.com/a/ACg8ocJWW4VZExGjDTfGuUoPZf-qYMZdn1ha8S_RyMEElANQULlQ5lU=s96-c",
+        "role": "moderator",
+        "accountStatus": "active",
+        "createdAt": "2025-11-20T01:39:54.887Z",
+        "updatedAt": "2025-11-21T08:17:28.108Z",
+        "__v": 0
+      },
+      {
+        "_id": "691f77f382fc086ef5c8bfa8",
+        "name": "Keith Andre",
+        "email": "keithandrebarcelon@gmail.com",
+        "password": "123123",
+        "role": "moderator",
+        "accountStatus": "active",
+        "createdAt": "2025-11-20T20:20:03.801Z",
+        "updatedAt": "2025-11-20T20:20:26.090Z",
+        "__v": 0
+      },
+      {
+        "_id": "6922898cad33b2805a2da53e",
+        "name": "CHESNA ZULEIKA YROY",
+        "email": "2201104627@student.buksu.edu.ph",
+        "googleId": "109333252068030026295",
+        "profilePicture": "https://lh3.googleusercontent.com/a/ACg8ocJcHayB5JeEGa4hoiS8JoMTfzc9xZnOwpMlzEsp_KEDbQ8ig9c=s96-c",
+        "role": "user",
+        "accountStatus": "active",
+        "createdAt": "2025-11-23T04:11:56.158Z",
+        "updatedAt": "2025-11-23T04:11:56.158Z",
+        "__v": 0
+      },
+      {
+        "_id": "69229adcb6b5113dd90beaf1",
+        "name": "Arist Tocats",
+        "email": "robloxuserkeeper@gmail.com",
+        "googleId": "116600670276538830395",
+        "profilePicture": "https://lh3.googleusercontent.com/a/ACg8ocJxtqb3-QUDwyQ3asgWqYdaMcWxHvYwJ02vhGKJBbLrdvcTFqk=s96-c",
+        "role": "user",
+        "accountStatus": "active",
+        "createdAt": "2025-11-23T05:25:48.056Z",
+        "updatedAt": "2025-11-23T05:25:48.056Z",
+        "__v": 0
+      },
+      {
+        "_id": "69229e52b6b5113dd90becac",
+        "name": "Livitia",
+        "email": "livitiq@gmail.com",
+        "googleId": "114758755517781824443",
+        "profilePicture": "https://lh3.googleusercontent.com/a/ACg8ocLmTVeV1J2vg6m4vLqmGSZ88__wAVIPX_75kNxM7zvGW_9Lfjw=s96-c",
+        "role": "user",
+        "accountStatus": "active",
+        "createdAt": "2025-11-23T05:40:34.514Z",
+        "updatedAt": "2025-11-23T05:40:34.514Z",
+        "__v": 0
+      },
+      {
+        "_id": "692ca2661ca1a7b7d76a4099",
+        "name": "Joseph Ochavillo",
+        "email": "2301101055@student.buksu.edu.ph",
+        "password": "Josephian011004",
+        "__v": 0
+      },
+      {
+        "_id": "692d724562a5dbd2e1fed0e4",
+        "name": "Daniel  Cruz",
+        "email": "danielcruz123@example.com",
+        "password": "qawsedrf",
+        "role": "user",
+        "accountStatus": "active",
+        "createdAt": "2025-12-01T10:47:33.759Z",
+        "updatedAt": "2025-12-01T10:50:19.062Z",
+        "__v": 0,
+        "phoneNumber": "",
+        "profilePicture": "https://res.cloudinary.com/dotlg3hum/image/upload/v1764586214/hrql4eddmbt8z1monvay.jpg"
+      },
+      {
+        "_id": "692d7521428bd12c4542d5c3",
+        "name": "Maria  Santos",
+        "email": "mariasantos08@example.com",
+        "password": "qazwsx",
+        "role": "user",
+        "accountStatus": "active",
+        "createdAt": "2025-12-01T10:59:45.444Z",
+        "updatedAt": "2025-12-01T11:00:26.090Z",
+        "__v": 0,
+        "phoneNumber": "",
+        "profilePicture": "https://res.cloudinary.com/dotlg3hum/image/upload/v1764586824/gfh3ptrunf8seamwu38t.jpg"
+      },
+      {
+        "_id": "692db1c2a43ea50bdf74a1b2",
+        "name": "Deian Peralta",
+        "email": "deianperalta@gmail.com",
+        "password": "Dexx9976226237",
+        "role": "user",
+        "accountStatus": "active",
+        "createdAt": "2025-12-01T15:18:26.760Z",
+        "updatedAt": "2025-12-01T15:18:26.760Z",
+        "__v": 0
+      },
+      {
+        "_id": "692e2caaa089f445d3ada377",
+        "name": "Lisa Thompson",
+        "email": "lisathompson94@example.com",
+        "password": "qazwsx",
+        "role": "user",
+        "accountStatus": "active",
+        "createdAt": "2025-12-02T00:02:50.421Z",
+        "updatedAt": "2025-12-02T00:02:50.421Z",
+        "__v": 0
+      },
+      {
+        "_id": "692e738a56d7c9123d9830bd",
+        "name": "John Doe",
+        "email": "john.doe@example.com",
+        "password": "securepassword123",
+        "role": "user",
+        "accountStatus": "active",
+        "createdAt": "2025-12-02T05:05:14.561Z",
+        "updatedAt": "2025-12-02T05:05:14.561Z",
+        "__v": 0
+      }
+    ],
+    "items": [],
+    "lostItems": [
+      {
+        "_id": "69228953ad33b2805a2da508",
+        "name": "Sony Camera",
+        "category": "",
+        "location": "Gym",
+        "date": "2025-11-23T00:00:00.000Z",
+        "contactInfo": "0987654321",
+        "description": "Decorated with Hello Kitty and multiple cute stickers, \"Cyber-shot\" and \"12.1 Mega Pixels\" visible on the front",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1763871058/uims4llor76q2nefm22b.jpg",
+        "status": "Active",
+        "userId": "6915eb40d494ea5724934b98",
+        "createdAt": "2025-11-23T04:10:59.898Z",
+        "updatedAt": "2025-11-23T04:10:59.898Z",
+        "__v": 0
+      },
+      {
+        "_id": "69228e65ad33b2805a2da7fc",
+        "name": "Portable Fan",
+        "category": "Personal Items",
+        "location": "LW101",
+        "date": "2025-11-22T00:00:00.000Z",
+        "contactInfo": "nicole@gmail.com",
+        "description": "Hey! I lost my mini handheld fan—the kind you can fold. It’s light pastel green and white, with cute clay charms shaped like animals and bugs stuck to the fan blades. If you’ve seen it or picked it up somewhere, please let me know! Thanks!",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1763872356/ozglzvng4euwzv868cc9.jpg",
+        "status": "Active",
+        "userId": "6915eb40d494ea5724934b98",
+        "createdAt": "2025-11-23T04:32:37.004Z",
+        "updatedAt": "2025-11-23T04:32:37.004Z",
+        "__v": 0
+      },
+      {
+        "_id": "6922902bb6b5113dd90be123",
+        "name": "Dior Blush",
+        "category": "Personal Items",
+        "location": "Elementary CR",
+        "date": "2025-11-19T00:00:00.000Z",
+        "contactInfo": "joanna@gmail.com",
+        "description": "Lost my Dior blush compact! It’s the kind with the fancy silver trim and “DIOR” logo right on the front, with a pink shade inside. If anyone finds it, please message me—would really appreciate it!",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1763872809/ujv6upegi1n1t4fs4vgl.jpg",
+        "status": "Active",
+        "userId": "6922898cad33b2805a2da53e",
+        "createdAt": "2025-11-23T04:40:11.327Z",
+        "updatedAt": "2025-11-23T04:40:11.327Z",
+        "__v": 0
+      },
+      {
+        "_id": "692290f5b6b5113dd90be1f4",
+        "name": "Dior Gloss",
+        "category": "Personal Items",
+        "location": "Library",
+        "date": "2025-11-23T00:00:00.000Z",
+        "contactInfo": "nyx@gmail.com",
+        "description": "Lost my Dior blush compact! It’s the kind with the fancy silver trim and “DIOR” logo right on the front, with a pink shade inside. If anyone finds it, please message me—would really appreciate it!",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1763873012/pein9lq75fzxvbr6dxpj.jpg",
+        "status": "Active",
+        "userId": "691e716a2cb4f3563b6e9878",
+        "createdAt": "2025-11-23T04:43:33.173Z",
+        "updatedAt": "2025-11-23T04:43:33.173Z",
+        "__v": 0
+      },
+      {
+        "_id": "692d706062a5dbd2e1fed056",
+        "name": "Red Eyeglasses",
+        "category": "Accessories",
+        "location": "Canteen",
+        "date": "2025-12-01T00:00:00.000Z",
+        "contactInfo": "trista@gmail.com",
+        "description": "I lost a pair of red eyeglasses with a unique and stylish design. The frame is a deep red color, and both sides have a silver decorative swirl/heart-like detail near the hinges. The temples are slightly thick and curve inward at the ends. The design is very distinct, so it’s easy to recognize.",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1764585567/n41qs7qiqxk4akazgsdz.jpg",
+        "status": "Active",
+        "userId": "69229adcb6b5113dd90beaf1",
+        "createdAt": "2025-12-01T10:39:28.621Z",
+        "updatedAt": "2025-12-01T10:40:45.976Z",
+        "__v": 0
+      },
+      {
+        "_id": "692d715a62a5dbd2e1fed081",
+        "name": "Decorative Strawberry-Themed Keychain Charm",
+        "category": "Accessories",
+        "location": "HS206",
+        "date": "2025-12-01T10:43:38.688Z",
+        "contactInfo": "kit@gmail.com",
+        "description": "A cute and decorative strawberry-themed keychain charm. It has a silver heart-shaped clasp at the top and multiple colorful dangling charms. The keychain includes red and pink strawberries, small flowers, stars, cherries, pearls, and a tiny ribbon detail. One side features a bright red strawberry charm with a white bow above it, and another section has a yellow star-shaped frame with small red berry charms. There’s also a silver mini phone charm hanging on the right side. The overall color theme is red, pink, white, yellow, and silver.",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1764585817/eqlenqugfp8kju3brlav.jpg",
+        "status": "Active",
+        "userId": "69229adcb6b5113dd90beaf1",
+        "createdAt": "2025-12-01T10:43:38.688Z",
+        "updatedAt": "2025-12-01T10:43:38.688Z",
+        "__v": 0
+      },
+      {
+        "_id": "692d74fa428bd12c4542d5ba",
+        "name": "Pink Samsung Digital Camera with Flip Screen",
+        "category": "Electronics",
+        "location": "C-02-01",
+        "date": "2025-12-01T00:00:00.000Z",
+        "contactInfo": "joseph@gmail.com",
+        "description": "A pink Samsung point‑and‑shoot digital camera with a flip‑up LCD screen used for selfies or vlogging. The lens is built into the front, and the Samsung logo is printed on the body. The screen currently shows a live view of someone holding a phone, indicating that the camera powers on and the display works.",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1764586745/opldsamqm6mxfbenwvtx.jpg",
+        "status": "Active",
+        "userId": "692d724562a5dbd2e1fed0e4",
+        "createdAt": "2025-12-01T10:59:06.699Z",
+        "updatedAt": "2025-12-01T10:59:06.699Z",
+        "__v": 0
+      },
+      {
+        "_id": "692d761c428bd12c4542d6b8",
+        "name": "Pink Sony Cyber-shot digital camera",
+        "category": "Electronics",
+        "location": "C-02-02",
+        "date": "2025-11-18T00:00:00.000Z",
+        "contactInfo": "0321654987",
+        "description": "Found a pink Sony Cyber-shot camera with a sliding front cover and “Carl Zeiss 3x optical zoom” written on it. The body is light pink with a metallic finish and the Sony logo on the front. If this looks like yours, message with details (case, strap, or photos on the camera) so it can be returned to the right owner.",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1764587035/bydnyssso59u9kv47fru.jpg",
+        "status": "Active",
+        "userId": "692d7521428bd12c4542d5c3",
+        "createdAt": "2025-12-01T11:03:56.396Z",
+        "updatedAt": "2025-12-01T11:03:56.396Z",
+        "__v": 0
+      },
+      {
+        "_id": "692d76ba428bd12c4542d73f",
+        "name": "Grey Sony over-ear wireless headphones",
+        "category": "Electronics",
+        "location": "C-02-03",
+        "date": "2025-11-26T00:00:00.000Z",
+        "contactInfo": "ian@gmail.com",
+        "description": "Light grey Sony over-ear wireless headphones with padded headband and round earcups, found",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1764587192/shdr5bietczyrksbds8l.jpg",
+        "status": "Active",
+        "userId": "692d7521428bd12c4542d5c3",
+        "createdAt": "2025-12-01T11:06:34.394Z",
+        "updatedAt": "2025-12-01T11:18:04.967Z",
+        "__v": 0
+      },
+      {
+        "_id": "692dad575103ab5eab3c5a36",
+        "name": "Test",
+        "category": "Other",
+        "location": "sda",
+        "date": "2025-12-01T00:00:00.000Z",
+        "contactInfo": "asda",
+        "description": "313",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1764601175/dr8wvay6ygheivi4wikx.png",
+        "images": [
+          "https://res.cloudinary.com/dotlg3hum/image/upload/v1764601175/dr8wvay6ygheivi4wikx.png"
+        ],
+        "status": "Archived",
+        "userId": "69101c8acf08cb93ee482717",
+        "createdAt": "2025-12-01T14:59:35.613Z",
+        "updatedAt": "2025-12-02T02:14:52.403Z",
+        "__v": 0
+      },
+      {
+        "_id": "692e8010df6fe1cdf16ffaaf",
+        "name": "iPhone 13 Pro",
+        "category": "Electronics",
+        "location": "Student Center",
+        "date": "2025-12-01T00:00:00.000Z",
+        "contactInfo": "john@example.com",
+        "description": "Black iPhone with red case",
+        "imageUrl": "https://...",
+        "status": "Active",
+        "userId": "507f1f77bcf86cd799439011",
+        "createdAt": "2025-12-02T05:58:40.782Z",
+        "updatedAt": "2025-12-02T05:58:40.782Z",
+        "__v": 0
+      }
+    ],
+    "foundItems": [
+      {
+        "_id": "69160a4857d0b5be8e266514",
+        "name": "mooo",
+        "category": "",
+        "location": "farm",
+        "date": "2025-11-14T00:00:00.000Z",
+        "contactInfo": "585s61654131654632",
+        "description": "meowwesdswa",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1763052104/mejct0fbmobmbytu6r8b.jpg",
+        "status": "Claimed",
+        "userId": "690eff1dc8c5285157d24bb2",
+        "createdAt": "2025-11-13T16:41:44.342Z",
+        "updatedAt": "2025-11-14T07:52:54.228Z",
+        "__v": 0
+      },
+      {
+        "_id": "6916df21990933dda295c56a",
+        "name": "shirt",
+        "category": "",
+        "location": "classroom",
+        "date": "2025-11-14T00:00:00.000Z",
+        "contactInfo": "03164987",
+        "description": "green",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1763106591/oytep0ami2nubclfhgqe.png",
+        "status": "Claimed",
+        "userId": "690eff1dc8c5285157d24bb2",
+        "createdAt": "2025-11-14T07:49:53.338Z",
+        "updatedAt": "2025-11-15T22:32:59.604Z",
+        "__v": 0
+      },
+      {
+        "_id": "6916eaa9fa3720fadf048e8a",
+        "name": "wqewq",
+        "category": "",
+        "location": "wewqe",
+        "date": "2025-11-14T00:00:00.000Z",
+        "contactInfo": "545",
+        "description": "dasdsad",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1763109544/ryz2nwjvyhm2gf03uixw.jpg",
+        "status": "Deleted",
+        "userId": "690eff1dc8c5285157d24bb2",
+        "createdAt": "2025-11-14T08:39:05.694Z",
+        "updatedAt": "2025-11-16T00:01:50.018Z",
+        "__v": 0
+      },
+      {
+        "_id": "691f82463e06e5e01358a1ee",
+        "name": "GAG",
+        "category": "",
+        "location": "GARDEN",
+        "date": "2025-11-21T00:00:00.000Z",
+        "contactInfo": "12312321",
+        "description": "asdsad",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1763672648/xf3yuokpqxgoj08if6lz.png",
+        "status": "Claimed",
+        "userId": "691f77f382fc086ef5c8bfa8",
+        "createdAt": "2025-11-20T21:04:06.579Z",
+        "updatedAt": "2025-11-20T21:04:56.724Z",
+        "__v": 0
+      },
+      {
+        "_id": "69228a6fad33b2805a2da56c",
+        "name": "Iphone",
+        "category": "",
+        "location": "Benches",
+        "date": "2025-11-23T00:00:00.000Z",
+        "contactInfo": "0986574123",
+        "description": "Hi! I lost my pink iPhone with two big cameras on the back—no case and super clean look. If anyone finds it or has any info, please DM me. Would really appreciate your help!",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1763871342/daodbthj4qheppiqibtv.jpg",
+        "status": "Archived",
+        "userId": "6915eb40d494ea5724934b98",
+        "createdAt": "2025-11-23T04:15:43.728Z",
+        "updatedAt": "2025-11-23T05:03:11.894Z",
+        "__v": 0
+      },
+      {
+        "_id": "692297bbb6b5113dd90be7bb",
+        "name": "Lipstick",
+        "category": "Personal Items",
+        "location": "Elementary CR",
+        "date": "2025-11-23T00:00:00.000Z",
+        "contactInfo": "0968574321",
+        "description": "Hi! I found a pink Dior lipstick with a silver top. If this belongs to you or you know who lost it, please send me a message so I can return it!",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1763874745/n9rbnoa2aj9n4pwthyay.jpg",
+        "status": "Pending",
+        "userId": "6916ce4cf09d7cd000f46785",
+        "createdAt": "2025-11-23T05:12:27.526Z",
+        "updatedAt": "2025-11-23T05:14:40.248Z",
+        "__v": 0
+      },
+      {
+        "_id": "692299c0b6b5113dd90bea18",
+        "name": "Flower Bracelet",
+        "category": "Jewelry",
+        "location": "Classroom",
+        "date": "2025-11-23T00:00:00.000Z",
+        "contactInfo": "09876543210",
+        "description": "Hi! I lost this bracelet and I’m hoping someone might have seen it. It’s a delicate beaded bracelet with blue flower beads, small white flower beads, pearl accents, and gold details. It looks exactly like the one in the photo.",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1763875263/dtrd43ose2fbvwtc4nrc.jpg",
+        "status": "Active",
+        "userId": "690eff1dc8c5285157d24bb2",
+        "createdAt": "2025-11-23T05:21:04.962Z",
+        "updatedAt": "2025-11-23T05:21:04.962Z",
+        "__v": 0
+      },
+      {
+        "_id": "69229b89b6b5113dd90beb17",
+        "name": "White Bag",
+        "category": "Bags & Wallets",
+        "location": "HS201",
+        "date": "2025-11-18T00:00:00.000Z",
+        "contactInfo": "chels@gmail.com",
+        "description": "Hey everyone! I lost my white shoulder bag—it has gold hardware, a curved shape, and “JW PEI” printed on it. If you’ve seen it or picked it up, please DM me. Would really appreciate the help!",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1763875720/j03alwyawbtkhqucijeo.jpg",
+        "status": "Active",
+        "userId": "69229adcb6b5113dd90beaf1",
+        "createdAt": "2025-11-23T05:28:41.356Z",
+        "updatedAt": "2025-11-23T05:28:41.356Z",
+        "__v": 0
+      },
+      {
+        "_id": "69229caeb6b5113dd90bebae",
+        "name": "Sunglasses",
+        "category": "",
+        "location": "Canteen",
+        "date": "2025-11-11T00:00:00.000Z",
+        "contactInfo": "0987654321",
+        "description": "Found these sunglasses! They have round, black lenses and gold frames with black arms. If these belong to you (or someone you know), please DM me with details so I can return them!",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1763876012/wvx99mainvc0utahcwgw.jpg",
+        "status": "Active",
+        "userId": "6915eb40d494ea5724934b98",
+        "createdAt": "2025-11-23T05:33:34.050Z",
+        "updatedAt": "2025-11-23T05:33:34.050Z",
+        "__v": 0
+      },
+      {
+        "_id": "69229d9eb6b5113dd90bec36",
+        "name": "They Both Die at the End Book",
+        "category": "Books & Documents",
+        "location": "Library",
+        "date": "2025-11-23T00:00:00.000Z",
+        "contactInfo": "0987654321",
+        "description": "Found the book \"They Both Die at the End\" by Adam Silvera! I’ll be giving it to the SBO office, so if it’s yours, you can claim it there.",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1763876252/ebkvt0piqvzycc1oku8x.jpg",
+        "status": "Active",
+        "userId": "6915eb40d494ea5724934b98",
+        "createdAt": "2025-11-23T05:37:34.360Z",
+        "updatedAt": "2025-11-23T05:37:34.360Z",
+        "__v": 0
+      },
+      {
+        "_id": "69229eafb6b5113dd90beced",
+        "name": "Toyota Keys",
+        "category": "Keys",
+        "location": "LW102",
+        "date": "2025-11-18T00:00:00.000Z",
+        "contactInfo": "dexter@gmail.com",
+        "description": "Found a set of keys with a Mercedes car key fob, black dice keychains (showing 3 and 5 dots), a mini 8 ball charm, and two red cherry charms.",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1763876526/y3ydyirluzum4oqifa3d.jpg",
+        "status": "Pending",
+        "userId": "69229e52b6b5113dd90becac",
+        "createdAt": "2025-11-23T05:42:07.560Z",
+        "updatedAt": "2025-12-01T10:34:06.362Z",
+        "__v": 0
+      },
+      {
+        "_id": "692d71fd62a5dbd2e1fed0b8",
+        "name": "Black New York Yankees Baseball Cap",
+        "category": "Accessories",
+        "location": "HS201",
+        "date": "2025-11-06T00:00:00.000Z",
+        "contactInfo": "Xed@gmail.com",
+        "description": "A black baseball cap featuring the New York Yankees logo in white embroidery on the front and a small \"47\" brand logo on the left side. The cap appears to be in good condition, with an adjustable strap at the back. Suitable for casual wear or sports activities. If this item belongs to you, please provide a description or proof of ownership to claim.",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1764585980/opw1k1gayattwelqhr1p.jpg",
+        "status": "Active",
+        "userId": "69229adcb6b5113dd90beaf1",
+        "createdAt": "2025-12-01T10:46:21.079Z",
+        "updatedAt": "2025-12-01T10:46:21.079Z",
+        "__v": 0
+      },
+      {
+        "_id": "692d738c495966732c9afe21",
+        "name": "Pink flower hair claw clip",
+        "category": "Accessories",
+        "location": "Gym",
+        "date": "2025-12-01T00:00:00.000Z",
+        "contactInfo": "0987654321",
+        "description": "Pink plastic flower-shaped hair claw clip with five petals and an orange tint in the center",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1764586379/skwgu09igga40zcybsbs.jpg",
+        "status": "Active",
+        "userId": "692d724562a5dbd2e1fed0e4",
+        "createdAt": "2025-12-01T10:53:00.324Z",
+        "updatedAt": "2025-12-01T10:54:23.281Z",
+        "__v": 0
+      },
+      {
+        "_id": "692e66e091b7eee44d5cb435",
+        "name": "Test",
+        "category": "Other",
+        "location": "Balay",
+        "date": "2025-12-02T00:00:00.000Z",
+        "contactInfo": "23123213",
+        "description": "adad",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1764648673/gcwpimze0b7uxqngpex0.jpg",
+        "images": [
+          "https://res.cloudinary.com/dotlg3hum/image/upload/v1764648673/gcwpimze0b7uxqngpex0.jpg"
+        ],
+        "status": "Deleted",
+        "userId": "69101c8acf08cb93ee482717",
+        "createdAt": "2025-12-02T04:11:12.938Z",
+        "updatedAt": "2025-12-02T04:11:37.471Z",
+        "__v": 0
+      }
+    ],
+    "claimRequests": [
+      {
+        "_id": "69115afa9d6e71dfb208246d",
+        "itemId": "6910a734764b24e5512dc5b0",
+        "claimantId": "69101c8acf08cb93ee482717",
+        "proofOfOwnership": "akoa mani",
+        "status": "Approved",
+        "reviewNotes": "",
+        "createdAt": "2025-11-10T03:24:42.284Z",
+        "updatedAt": "2025-11-13T16:40:33.078Z",
+        "__v": 0,
+        "reviewedBy": "690ee09372b6d98958c1ac6d"
+      },
+      {
+        "_id": "69119df88dfdf5c8a1138e87",
+        "itemId": "69119dc18dfdf5c8a1138e6e",
+        "claimantId": "69101c8acf08cb93ee482717",
+        "proofOfOwnership": "AMOA MANANG SYSTEM",
+        "status": "Rejected",
+        "reviewNotes": "kulang",
+        "createdAt": "2025-11-10T08:10:32.639Z",
+        "updatedAt": "2025-11-13T14:09:18.757Z",
+        "__v": 0,
+        "reviewedBy": "690ee09372b6d98958c1ac6d"
+      },
+      {
+        "_id": "6915e6c6d494ea5724934a32",
+        "itemId": "6911a5c1b92a752efa64184e",
+        "claimantId": "690ee09372b6d98958c1ac6d",
+        "proofOfOwnership": "sana akin",
+        "status": "Rejected",
+        "reviewNotes": "noo",
+        "createdAt": "2025-11-13T14:10:14.256Z",
+        "updatedAt": "2025-11-13T14:14:58.924Z",
+        "__v": 0,
+        "reviewedBy": "690ee09372b6d98958c1ac6d"
+      },
+      {
+        "_id": "6916099d2dd31857649b0bd7",
+        "itemId": "69160921cda38438d839f14e",
+        "claimantId": "690eff1dc8c5285157d24bb2",
+        "proofOfOwnership": "sadsa",
+        "status": "Approved",
+        "reviewNotes": "sdas",
+        "createdAt": "2025-11-13T16:38:53.153Z",
+        "updatedAt": "2025-11-13T16:39:43.546Z",
+        "__v": 0,
+        "reviewedBy": "690ee09372b6d98958c1ac6d"
+      },
+      {
+        "_id": "69160a5157d0b5be8e26652a",
+        "itemId": "69160a4857d0b5be8e266514",
+        "claimantId": "690eff1dc8c5285157d24bb2",
+        "proofOfOwnership": "dsf",
+        "status": "Approved",
+        "reviewNotes": "sadasd",
+        "createdAt": "2025-11-13T16:41:53.932Z",
+        "updatedAt": "2025-11-14T07:52:54.058Z",
+        "__v": 0,
+        "reviewedBy": "690eff1dc8c5285157d24bb2"
+      },
+      {
+        "_id": "6916e2fac208376407be3510",
+        "itemId": "6916df21990933dda295c56a",
+        "claimantId": "690eff1dc8c5285157d24bb2",
+        "proofOfOwnership": "sadsad",
+        "status": "Rejected",
+        "reviewNotes": "dele",
+        "createdAt": "2025-11-14T08:06:18.755Z",
+        "updatedAt": "2025-11-14T08:29:25.951Z",
+        "__v": 0,
+        "reviewedBy": "690eff1dc8c5285157d24bb2"
+      },
+      {
+        "_id": "6916ea1cfa3720fadf048dbd",
+        "itemId": "6915fb0ac10d355757f23be5",
+        "claimantId": "690eff1dc8c5285157d24bb2",
+        "proofOfOwnership": "dfsfds",
+        "status": "Rejected",
+        "reviewNotes": "sadasd",
+        "createdAt": "2025-11-14T08:36:44.874Z",
+        "updatedAt": "2025-11-14T08:40:21.901Z",
+        "__v": 0,
+        "reviewedBy": "690eff1dc8c5285157d24bb2"
+      },
+      {
+        "_id": "6916ea37fa3720fadf048dfe",
+        "itemId": "6916df21990933dda295c56a",
+        "claimantId": "690eff1dc8c5285157d24bb2",
+        "proofOfOwnership": "sadsadsadas",
+        "status": "Rejected",
+        "reviewNotes": "fdsfdsf",
+        "createdAt": "2025-11-14T08:37:11.728Z",
+        "updatedAt": "2025-11-14T08:49:29.806Z",
+        "__v": 0,
+        "reviewedBy": "690ee09372b6d98958c1ac6d"
+      },
+      {
+        "_id": "6918ff897af8a415592edbfe",
+        "itemId": "6916df21990933dda295c56a",
+        "claimantId": "6915eb40d494ea5724934b98",
+        "proofOfOwnership": "sdzX",
+        "status": "Approved",
+        "reviewNotes": "xzczxc",
+        "createdAt": "2025-11-15T22:32:41.656Z",
+        "updatedAt": "2025-11-15T22:32:59.378Z",
+        "__v": 0,
+        "reviewedBy": "6915eb40d494ea5724934b98"
+      },
+      {
+        "_id": "691f798c82fc086ef5c8c1db",
+        "itemId": "6918eebb84a277dca75df054",
+        "claimantId": "691f77f382fc086ef5c8bfa8",
+        "proofOfOwnership": "gag",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1763670414/rgiriqmzfzwp8bg4ud7f.png",
+        "status": "Rejected",
+        "reviewNotes": "di mais",
+        "createdAt": "2025-11-20T20:26:52.170Z",
+        "updatedAt": "2025-11-20T20:40:59.055Z",
+        "__v": 0,
+        "reviewedBy": "691f77f382fc086ef5c8bfa8"
+      },
+      {
+        "_id": "691f82643e06e5e01358a218",
+        "itemId": "691f82463e06e5e01358a1ee",
+        "claimantId": "691f77f382fc086ef5c8bfa8",
+        "proofOfOwnership": "akoa mana",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1763672678/qihpwexmrqfisr2lfzje.png",
+        "status": "Approved",
+        "reviewNotes": "ok",
+        "createdAt": "2025-11-20T21:04:36.257Z",
+        "updatedAt": "2025-11-20T21:04:56.563Z",
+        "__v": 0,
+        "reviewedBy": "691f77f382fc086ef5c8bfa8"
+      },
+      {
+        "_id": "69229840b6b5113dd90be833",
+        "itemId": "692297bbb6b5113dd90be7bb",
+        "claimantId": "690eff1dc8c5285157d24bb2",
+        "proofOfOwnership": "I can prove this item belongs to me with photos of the Dior compact and its packaging from when I bought it, as well as the purchase receipt. The compact has a pink shade inside, a silver DIOR logo on the front, and a distinctive pattern visible on the case.",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1763874878/zluwuj4dxw463ya3faqr.jpg",
+        "status": "Pending",
+        "reviewNotes": "",
+        "createdAt": "2025-11-23T05:14:40.178Z",
+        "updatedAt": "2025-11-23T05:14:40.178Z",
+        "__v": 0
+      },
+      {
+        "_id": "692d6f1e62a5dbd2e1fecf78",
+        "itemId": "69229eafb6b5113dd90beced",
+        "claimantId": "69229adcb6b5113dd90beaf1",
+        "proofOfOwnership": "I can prove this item belongs to me because the keychain has very specific accessories attached to it that I personally own. It includes a set of black dice with white dots, a small black-and-white 8-ball charm, and a silver metal chain linking everything together. These items were all attached to my Mercedes-style car key, which has the same button layout and shape shown in the photo. I also have previous photos of my keychain with these exact charms, and I can describe the arrangement of each item in detail if needed.",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1764585243/xwvczozsx9rsthvbxnmt.jpg",
+        "status": "Pending",
+        "reviewNotes": "",
+        "createdAt": "2025-12-01T10:34:06.300Z",
+        "updatedAt": "2025-12-01T10:34:06.300Z",
+        "__v": 0
+      },
+      {
+        "_id": "692d79e9428bd12c4542d9b0",
+        "itemId": "69229eafb6b5113dd90beced",
+        "claimantId": "692d7521428bd12c4542d5c3",
+        "proofOfOwnership": "mine",
+        "imageUrl": "https://res.cloudinary.com/dotlg3hum/image/upload/v1764588007/f0yslgq58g8gzqelku7w.png",
+        "status": "Pending",
+        "reviewNotes": "",
+        "createdAt": "2025-12-01T11:20:09.409Z",
+        "updatedAt": "2025-12-01T11:20:09.409Z",
+        "__v": 0
+      }
+    ],
+    "auditLogs": [
+      {
+        "_id": "6915e68fd494ea5724934a13",
+        "moderatorId": "690ee09372b6d98958c1ac6d",
+        "action": "claim_rejected",
+        "targetType": "ClaimRequest",
+        "targetId": "69119df88dfdf5c8a1138e87",
+        "details": "kulang",
+        "metadata": {
+          "itemId": "69119dc18dfdf5c8a1138e6e",
+          "claimantId": "69101c8acf08cb93ee482717",
+          "status": "Rejected"
+        },
+        "createdAt": "2025-11-13T14:09:19.108Z",
+        "updatedAt": "2025-11-13T14:09:19.108Z",
+        "__v": 0
+      },
+      {
+        "_id": "6915e7e3d494ea5724934a8f",
+        "moderatorId": "690ee09372b6d98958c1ac6d",
+        "action": "claim_rejected",
+        "targetType": "ClaimRequest",
+        "targetId": "6915e6c6d494ea5724934a32",
+        "details": "noo",
+        "metadata": {
+          "itemId": "6911a5c1b92a752efa64184e",
+          "claimantId": "690ee09372b6d98958c1ac6d",
+          "status": "Rejected"
+        },
+        "createdAt": "2025-11-13T14:14:59.093Z",
+        "updatedAt": "2025-11-13T14:14:59.093Z",
+        "__v": 0
+      },
+      {
+        "_id": "691609cf57d0b5be8e266497",
+        "moderatorId": "690ee09372b6d98958c1ac6d",
+        "action": "claim_approved",
+        "targetType": "ClaimRequest",
+        "targetId": "6916099d2dd31857649b0bd7",
+        "details": "sdas",
+        "metadata": {
+          "itemId": "69160921cda38438d839f14e",
+          "claimantId": "690eff1dc8c5285157d24bb2",
+          "status": "Approved"
+        },
+        "createdAt": "2025-11-13T16:39:43.927Z",
+        "updatedAt": "2025-11-13T16:39:43.927Z",
+        "__v": 0
+      },
+      {
+        "_id": "69160a0157d0b5be8e2664f4",
+        "moderatorId": "690ee09372b6d98958c1ac6d",
+        "action": "claim_approved",
+        "targetType": "ClaimRequest",
+        "targetId": "69115afa9d6e71dfb208246d",
+        "details": "Claim request approved for item: Birdy",
+        "metadata": {
+          "itemId": "6910a734764b24e5512dc5b0",
+          "claimantId": "69101c8acf08cb93ee482717",
+          "status": "Approved"
+        },
+        "createdAt": "2025-11-13T16:40:33.553Z",
+        "updatedAt": "2025-11-13T16:40:33.553Z",
+        "__v": 0
+      },
+      {
+        "_id": "6916dfd6990933dda295c605",
+        "moderatorId": "690eff1dc8c5285157d24bb2",
+        "action": "claim_approved",
+        "targetType": "ClaimRequest",
+        "targetId": "69160a5157d0b5be8e26652a",
+        "details": "sadasd",
+        "metadata": {
+          "itemId": "69160a4857d0b5be8e266514",
+          "claimantId": "690eff1dc8c5285157d24bb2",
+          "status": "Approved"
+        },
+        "createdAt": "2025-11-14T07:52:54.454Z",
+        "updatedAt": "2025-11-14T07:52:54.454Z",
+        "__v": 0
+      },
+      {
+        "_id": "6916e866fa3720fadf048c8f",
+        "moderatorId": "690eff1dc8c5285157d24bb2",
+        "action": "claim_rejected",
+        "targetType": "ClaimRequest",
+        "targetId": "6916e2fac208376407be3510",
+        "details": "dele",
+        "metadata": {
+          "itemId": "6916df21990933dda295c56a",
+          "claimantId": "690eff1dc8c5285157d24bb2",
+          "status": "Rejected"
+        },
+        "createdAt": "2025-11-14T08:29:26.179Z",
+        "updatedAt": "2025-11-14T08:29:26.179Z",
+        "__v": 0
+      },
+      {
+        "_id": "6916eaf6fa3720fadf048f38",
+        "moderatorId": "690eff1dc8c5285157d24bb2",
+        "action": "claim_rejected",
+        "targetType": "ClaimRequest",
+        "targetId": "6916ea1cfa3720fadf048dbd",
+        "details": "sadasd",
+        "metadata": {
+          "itemId": "6915fb0ac10d355757f23be5",
+          "claimantId": "690eff1dc8c5285157d24bb2",
+          "status": "Rejected"
+        },
+        "createdAt": "2025-11-14T08:40:22.169Z",
+        "updatedAt": "2025-11-14T08:40:22.169Z",
+        "__v": 0
+      },
+      {
+        "_id": "6916ed1ac1435f581be8089e",
+        "moderatorId": "690ee09372b6d98958c1ac6d",
+        "action": "claim_rejected",
+        "targetType": "ClaimRequest",
+        "targetId": "6916ea37fa3720fadf048dfe",
+        "details": "fdsfdsf",
+        "metadata": {
+          "itemId": "6916df21990933dda295c56a",
+          "claimantId": "690eff1dc8c5285157d24bb2",
+          "status": "Rejected"
+        },
+        "createdAt": "2025-11-14T08:49:30.046Z",
+        "updatedAt": "2025-11-14T08:49:30.046Z",
+        "__v": 0
+      },
+      {
+        "_id": "6918ff9b7af8a415592edc4f",
+        "moderatorId": "6915eb40d494ea5724934b98",
+        "action": "claim_approved",
+        "targetType": "ClaimRequest",
+        "targetId": "6918ff897af8a415592edbfe",
+        "details": "xzczxc",
+        "metadata": {
+          "itemId": "6916df21990933dda295c56a",
+          "claimantId": "6915eb40d494ea5724934b98",
+          "status": "Approved"
+        },
+        "createdAt": "2025-11-15T22:32:59.883Z",
+        "updatedAt": "2025-11-15T22:32:59.883Z",
+        "__v": 0
+      },
+      {
+        "_id": "691b625311d9bee94da126e3",
+        "moderatorId": "69193f618838b9d863bbf85a",
+        "action": "moderator_promoted",
+        "targetType": "User",
+        "targetId": "69193f618838b9d863bbf85a",
+        "details": "Changed user role from undefined to moderator",
+        "metadata": {
+          "newRole": "moderator",
+          "userName": "Nyx azsxdc"
+        },
+        "createdAt": "2025-11-17T17:58:43.522Z",
+        "updatedAt": "2025-11-17T17:58:43.522Z",
+        "__v": 0
+      },
+      {
+        "_id": "691b627c11d9bee94da126fd",
+        "moderatorId": "69193f618838b9d863bbf85a",
+        "action": "moderator_promoted",
+        "targetType": "User",
+        "targetId": "6915eb40d494ea5724934b98",
+        "details": "Changed user role from undefined to moderator",
+        "metadata": {
+          "newRole": "moderator",
+          "userName": "Dexter Peralta"
+        },
+        "createdAt": "2025-11-17T17:59:24.961Z",
+        "updatedAt": "2025-11-17T17:59:24.961Z",
+        "__v": 0
+      },
+      {
+        "_id": "691b63d954dc3b677d8c492d",
+        "moderatorId": "6915eb40d494ea5724934b98",
+        "action": "moderator_promoted",
+        "targetType": "User",
+        "targetId": "6915eb40d494ea5724934b98",
+        "details": "Changed user role from undefined to moderator",
+        "metadata": {
+          "newRole": "moderator",
+          "userName": "Dexter Peralta"
+        },
+        "createdAt": "2025-11-17T18:05:13.302Z",
+        "updatedAt": "2025-11-17T18:05:13.302Z",
+        "__v": 0
+      },
+      {
+        "_id": "691bb642b2368d003d8ad5c4",
+        "moderatorId": "6915eb40d494ea5724934b98",
+        "action": "moderator_promoted",
+        "targetType": "User",
+        "targetId": "6916ce4cf09d7cd000f46785",
+        "details": "Changed user role from user to moderator",
+        "metadata": {
+          "oldRole": "user",
+          "newRole": "moderator",
+          "userName": "Zoe Ayumi"
+        },
+        "createdAt": "2025-11-17T23:56:50.015Z",
+        "updatedAt": "2025-11-17T23:56:50.015Z",
+        "__v": 0
+      },
+      {
+        "_id": "691bb8206af28ef3d7dafd0d",
+        "moderatorId": "6915eb40d494ea5724934b98",
+        "action": "role_changed",
+        "targetType": "User",
+        "targetId": "6916cf9fbe533dd9e3024285",
+        "details": "Changed user role from user to admin",
+        "metadata": {
+          "oldRole": "user",
+          "newRole": "admin",
+          "userName": "Keith Andre Barcelon"
+        },
+        "createdAt": "2025-11-18T00:04:48.978Z",
+        "updatedAt": "2025-11-18T00:04:48.978Z",
+        "__v": 0
+      },
+      {
+        "_id": "691bc8fccc1b6e925e64d30b",
+        "moderatorId": "6915eb40d494ea5724934b98",
+        "action": "role_changed",
+        "targetType": "User",
+        "targetId": "69193f618838b9d863bbf85a",
+        "details": "Changed user role from user to admin",
+        "metadata": {
+          "oldRole": "user",
+          "newRole": "admin",
+          "userName": "Nyx azsxdc"
+        },
+        "createdAt": "2025-11-18T01:16:44.379Z",
+        "updatedAt": "2025-11-18T01:16:44.379Z",
+        "__v": 0
+      },
+      {
+        "_id": "691be2891b1573e0f0755627",
+        "moderatorId": "6915eb40d494ea5724934b98",
+        "action": "role_changed",
+        "targetType": "User",
+        "targetId": "69101c8acf08cb93ee482717",
+        "details": "Changed user role from user to admin",
+        "metadata": {
+          "oldRole": "user",
+          "newRole": "admin",
+          "userName": "Keith Andre Barcelon"
+        },
+        "createdAt": "2025-11-18T03:05:45.184Z",
+        "updatedAt": "2025-11-18T03:05:45.184Z",
+        "__v": 0
+      },
+      {
+        "_id": "691f780a82fc086ef5c8bfb4",
+        "moderatorId": "69101c8acf08cb93ee482717",
+        "action": "moderator_promoted",
+        "targetType": "User",
+        "targetId": "691f77f382fc086ef5c8bfa8",
+        "details": "Changed user role from user to moderator",
+        "metadata": {
+          "oldRole": "user",
+          "newRole": "moderator",
+          "userName": "Keith Andre"
+        },
+        "createdAt": "2025-11-20T20:20:26.159Z",
+        "updatedAt": "2025-11-20T20:20:26.159Z",
+        "__v": 0
+      },
+      {
+        "_id": "691f7cdb617063b71f90e37e",
+        "moderatorId": "691f77f382fc086ef5c8bfa8",
+        "action": "claim_rejected",
+        "targetType": "ClaimRequest",
+        "targetId": "691f798c82fc086ef5c8c1db",
+        "details": "di mais",
+        "metadata": {
+          "itemId": "6918eebb84a277dca75df054",
+          "claimantId": "691f77f382fc086ef5c8bfa8",
+          "status": "Rejected"
+        },
+        "createdAt": "2025-11-20T20:40:59.348Z",
+        "updatedAt": "2025-11-20T20:40:59.348Z",
+        "__v": 0
+      },
+      {
+        "_id": "691f82783e06e5e01358a275",
+        "moderatorId": "691f77f382fc086ef5c8bfa8",
+        "action": "claim_approved",
+        "targetType": "ClaimRequest",
+        "targetId": "691f82643e06e5e01358a218",
+        "details": "ok",
+        "metadata": {
+          "itemId": "691f82463e06e5e01358a1ee",
+          "claimantId": "691f77f382fc086ef5c8bfa8",
+          "status": "Approved"
+        },
+        "createdAt": "2025-11-20T21:04:56.953Z",
+        "updatedAt": "2025-11-20T21:04:56.953Z",
+        "__v": 0
+      },
+      {
+        "_id": "69201fdfafc7de7dadd57619",
+        "moderatorId": "6915eb40d494ea5724934b98",
+        "action": "moderator_promoted",
+        "targetType": "User",
+        "targetId": "691e716a2cb4f3563b6e9878",
+        "details": "Changed user role from user to moderator",
+        "metadata": {
+          "oldRole": "user",
+          "newRole": "moderator",
+          "userName": "Vissy"
+        },
+        "createdAt": "2025-11-21T08:16:31.810Z",
+        "updatedAt": "2025-11-21T08:16:31.810Z",
+        "__v": 0
+      },
+      {
+        "_id": "6921c915eedbd80a9cdc8894",
+        "moderatorId": "6915eb40d494ea5724934b98",
+        "action": "role_changed",
+        "targetType": "User",
+        "targetId": "690eff1dc8c5285157d24bb2",
+        "details": "Changed user role from user to admin",
+        "metadata": {
+          "oldRole": "user",
+          "newRole": "admin",
+          "userName": "JOANNA NICOLE PARREÑO YROY"
+        },
+        "createdAt": "2025-11-22T14:30:45.898Z",
+        "updatedAt": "2025-11-22T14:30:45.898Z",
+        "__v": 0
+      }
+    ]
+  },
+  "stats": {
+    "usersCount": 21,
+    "itemsCount": 0,
+    "lostItemsCount": 11,
+    "foundItemsCount": 14,
+    "claimRequestsCount": 14,
+    "auditLogsCount": 21
+  }
+}
