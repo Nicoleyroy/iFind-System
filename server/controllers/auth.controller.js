@@ -83,7 +83,7 @@ const login = async (req, res) => {
     
     // Check if user has a password (not Google-only account)
     if (!user.password) {
-      return res.status(401).json({ message: 'Please login with Google' });
+      return res.status(401).json({ message: 'Please login with Google', googleOnly: true });
     }
     
     // Compare password using bcrypt

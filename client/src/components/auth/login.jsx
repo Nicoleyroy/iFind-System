@@ -153,7 +153,12 @@ const Login = () => {
           navigate("/dashboard");
         }
       } else {
-        setError(data.message || data.error || "Login failed");
+        // If server indicates the account is Google-only, show a clearer message
+        if (data && data.googleOnly) {
+          setError('This account was created with Google sign-in. Use "Sign in with Google" or reset your password.');
+        } else {
+          setError(data.message || data.error || "Login failed");
+        }
       }
     } catch (err) {
       console.error(err);
