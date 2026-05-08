@@ -9,6 +9,7 @@ import {
   TrashIcon,
 } from '@heroicons/react/24/outline';
 import { API_ENDPOINTS } from '../../utils/constants';
+import { confirm, success as swalSuccess, error as swalError } from '../../utils/swal';
 import AdminSidebar from '../layout/AdminSidebar';
 
 const AllUsers = () => {
@@ -71,34 +72,41 @@ const AllUsers = () => {
     setFilteredUsers(filtered);
   };
 
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+
   const handleSuspendUser = async (userId, currentStatus) => {
     const newStatus = currentStatus === 'suspended' ? 'active' : 'suspended';
     const action = newStatus === 'suspended' ? 'suspend' : 'activate';
     
-    if (!window.confirm(`Are you sure you want to ${action} this user?`)) return;
-    
+    const ok = await confirm('Confirm action', `Are you sure you want to ${action} this user?`);
+    if (!ok) return;
+
     try {
       const response = await fetch(API_ENDPOINTS.USER_BY_ID(userId), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accountStatus: newStatus }),
+        body: JSON.stringify({ 
+          accountStatus: newStatus,
+          adminId: currentUser._id || currentUser.id
+        }),
       });
 
       if (response.ok) {
-        alert(`User ${action}d successfully`);
+        swalSuccess('Success', `User ${action}d successfully`);
         fetchUsers();
       } else {
         const data = await response.json();
-        alert(data.message || `Failed to ${action} user`);
+        swalError('Error', data.message || `Failed to ${action} user`);
       }
     } catch (error) {
       console.error('Error updating user status:', error);
-      alert(`Error: ${error.message}`);
+      swalError('Error', `Error: ${error.message}`);
     }
   };
 
   const handleDeleteUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to permanently delete this user? This action cannot be undone.')) return;
+    const ok = await confirm('Delete user?', 'Are you sure you want to permanently delete this user? This action cannot be undone.');
+    if (!ok) return;
 
     try {
       const response = await fetch(API_ENDPOINTS.USER_BY_ID(userId), {
@@ -106,15 +114,15 @@ const AllUsers = () => {
       });
 
       if (response.ok) {
-        alert('User deleted successfully');
+        swalSuccess('Deleted', 'User deleted successfully');
         fetchUsers();
       } else {
         const data = await response.json();
-        alert(data.message || 'Failed to delete user');
+        swalError('Error', data.message || 'Failed to delete user');
       }
     } catch (error) {
       console.error('Error deleting user:', error);
-      alert(`Error: ${error.message}`);
+      swalError('Error', `Error: ${error.message}`);
     }
   };
 

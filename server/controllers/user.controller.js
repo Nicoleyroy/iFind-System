@@ -77,6 +77,22 @@ const updateUser = async (req, res) => {
         });
       }
     }
+
+    // Audit logging for banning
+    if (accountStatus === 'banned' && oldUser.accountStatus !== 'banned') {
+      if (adminId) {
+        await AuditLogModel.create({
+          moderatorId: adminId,
+          action: 'user_banned',
+          targetType: 'User',
+          targetId: user._id,
+          details: `Banned user "${user.name || user.email}"`,
+          metadata: {
+            userName: user.name || user.email,
+          },
+        });
+      }
+    }
     
     return res.json({ data: user, message: 'Profile updated successfully' });
   } catch (err) {
@@ -116,11 +132,14 @@ const changePassword = async (req, res) => {
         return res.status(400).json({ message: 'Current password is required' });
       }
       
-      if (user.password !== currentPassword) {
+      // Use bcrypt to compare current password
+      const isMatch = await user.comparePassword(currentPassword);
+      if (!isMatch) {
         return res.status(401).json({ message: 'Current password is incorrect' });
       }
     }
     
+    // Set new password - pre-save hook will hash it
     user.password = newPassword;
     await user.save();
     

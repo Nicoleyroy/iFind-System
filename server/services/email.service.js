@@ -38,8 +38,30 @@ const sendTestEmail = async (to, hostname) => {
   return info;
 };
 
+const sendGenericEmail = async (to, subject, text, html) => {
+  if (!mailTransport) {
+    console.warn('Mail transport not configured; skipping send');
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`Email to ${to}: ${subject}\n${text}`);
+    }
+    return { sent: false };
+  }
+
+  const mail = {
+    from: config.SMTP_FROM || `no-reply@iFind`,
+    to,
+    subject,
+    text: text || '',
+    html: html || (text ? `<p>${text}</p>` : ''),
+  };
+
+  await mailTransport.sendMail(mail);
+  return { sent: true };
+};
+
 module.exports = {
   sendPasswordResetEmail,
   sendTestEmail,
+  sendGenericEmail,
 };
 

@@ -65,27 +65,160 @@ export default function ReportsDashboard() {
     }
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!analytics) return;
-    
-    const exportData = {
-      generatedAt: new Date().toISOString(),
-      dateRange: dateRange.startDate && dateRange.endDate 
+
+    try {
+      // Try to use jsPDF if available, otherwise use a simple canvas-based approach
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
+      
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      let yPosition = 20;
+      const margin = 15;
+      const lineHeight = 7;
+
+      // Title
+      doc.setFontSize(20);
+      doc.setFont(undefined, 'bold');
+      doc.text('iFind Reports Dashboard', pageWidth / 2, yPosition, { align: 'center' });
+      
+      yPosition += 12;
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(100);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, yPosition, { align: 'center' });
+      
+      yPosition += 12;
+      doc.setDrawColor(200);
+      doc.line(margin, yPosition, pageWidth - margin, yPosition);
+      
+      // Date Range
+      yPosition += 8;
+      doc.setTextColor(0);
+      doc.setFont(undefined, 'bold');
+      doc.text('Report Period:', margin, yPosition);
+      yPosition += lineHeight;
+      doc.setFont(undefined, 'normal');
+      const dateRangeText = dateRange.startDate && dateRange.endDate 
         ? `${dateRange.startDate} to ${dateRange.endDate}` 
-        : 'All time',
-      ...analytics
-    };
-    
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `claims-report-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
+        : 'All time';
+      doc.text(dateRangeText, margin + 5, yPosition);
+      
+      // Summary Statistics Section
+      yPosition += 12;
+      doc.setFont(undefined, 'bold');
+      doc.text('Summary Statistics:', margin, yPosition);
+      
+      yPosition += 8;
+      doc.setFont(undefined, 'normal');
+      const totalClaims = (analytics.overview?.pendingClaims || 0) + 
+                          (analytics.overview?.approvedClaims || 0) + 
+                          (analytics.overview?.rejectedClaims || 0);
+      
+      const stats = [
+        `Total Claims: ${totalClaims}`,
+        `Approved: ${analytics.overview?.approvedClaims || 0}`,
+        `Rejected: ${analytics.overview?.rejectedClaims || 0}`,
+        `Pending: ${analytics.overview?.pendingClaims || 0}`,
+      ];
+      
+      stats.forEach(stat => {
+        if (yPosition > pageHeight - 20) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        doc.text(stat, margin + 5, yPosition);
+        yPosition += lineHeight;
+      });
+
+      // Claims Trend Section
+      yPosition += 10;
+      doc.setFont(undefined, 'bold');
+      doc.text('Claims Trend (Last 6 Months):', margin, yPosition);
+      
+      yPosition += 8;
+      doc.setFont(undefined, 'normal');
+      if (analytics.trends && analytics.trends.length > 0) {
+        analytics.trends.forEach(trend => {
+          if (yPosition > pageHeight - 20) {
+            doc.addPage();
+            yPosition = 20;
+          }
+          const trendText = `${trend.month}: Approved: ${trend.approved}, Rejected: ${trend.rejected}, Pending: ${trend.pending}`;
+          doc.text(trendText, margin + 5, yPosition);
+          yPosition += lineHeight;
+        });
+      }
+
+      // Category Distribution
+      yPosition += 10;
+      doc.setFont(undefined, 'bold');
+      doc.text('Claims by Category:', margin, yPosition);
+      
+      yPosition += 8;
+      doc.setFont(undefined, 'normal');
+      if (analytics.itemsByCategory && Object.keys(analytics.itemsByCategory).length > 0) {
+        Object.entries(analytics.itemsByCategory).forEach(([category, count]) => {
+          if (yPosition > pageHeight - 20) {
+            doc.addPage();
+            yPosition = 20;
+          }
+          doc.text(`• ${category}: ${count}`, margin + 5, yPosition);
+          yPosition += lineHeight;
+        });
+      }
+
+      // Moderator Workload
+      yPosition += 10;
+      doc.setFont(undefined, 'bold');
+      doc.text('Moderator Workload:', margin, yPosition);
+      
+      yPosition += 8;
+      doc.setFont(undefined, 'normal');
+      if (analytics.moderatorWorkload && analytics.moderatorWorkload.length > 0) {
+        analytics.moderatorWorkload.forEach(mod => {
+          if (yPosition > pageHeight - 20) {
+            doc.addPage();
+            yPosition = 20;
+          }
+          doc.text(`• ${mod.moderatorName}: ${mod.claimsReviewed} claims reviewed`, margin + 5, yPosition);
+          yPosition += lineHeight;
+        });
+      }
+
+      // Footer
+      yPosition = pageHeight - 15;
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text('iFind - Found Item Management System', pageWidth / 2, yPosition, { align: 'center' });
+
+      // Download PDF
+      const filename = `claims-report-${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(filename);
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      // Fallback: export as JSON if PDF library not available
+      const exportData = {
+        generatedAt: new Date().toISOString(),
+        dateRange: dateRange.startDate && dateRange.endDate 
+          ? `${dateRange.startDate} to ${dateRange.endDate}` 
+          : 'All time',
+        ...analytics
+      };
+      
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `claims-report-${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+    }
   };
 
-  if (loading) {
+  if (!analytics) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
         <div className="text-center">
@@ -94,10 +227,6 @@ export default function ReportsDashboard() {
         </div>
       </div>
     );
-  }
-
-  if (!analytics) {
-    return <div className="p-6">Error loading analytics</div>;
   }
 
   // Prepare chart data
@@ -186,12 +315,12 @@ export default function ReportsDashboard() {
       
       <div className="flex-1 ml-64">
         {/* Compact Header with Gradient */}
-        <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white px-8 py-5">
+        <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white px-8 py-14">
           <div className="flex items-center justify-between">
             {/* Left: Title */}
             <div>
-              <h1 className="text-2xl font-bold">Reports & Analytics</h1>
-              <p className="text-white/80 text-sm mt-0.5">Monitor performance and generate detailed reports</p>
+              <h1 className="text-3xl font-bold">Reports & Analytics</h1>
+              <p className="text-white/85 text-base mt-1">Monitor performance and generate detailed reports</p>
             </div>
 
             {/* Right: Export Button & Profile */}
@@ -223,6 +352,9 @@ export default function ReportsDashboard() {
           {/* Filters */}
           <div className="bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-200">
             <div className="flex flex-col md:flex-row gap-4 items-end">
+              {loading && (
+                <div className="absolute top-24 left-0 right-0 h-1 bg-gradient-to-r from-orange-400 to-orange-600 animate-pulse rounded-b-lg"></div>
+              )}
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <Calendar className="w-4 h-4 inline mr-1" />
@@ -281,7 +413,7 @@ export default function ReportsDashboard() {
           </div>
 
           {/* Overview Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 ${loading ? 'opacity-60 pointer-events-none' : ''}`}>
             <StatCard
               icon={<Package className="w-6 h-6" />}
               title="Total Claims"
@@ -306,9 +438,14 @@ export default function ReportsDashboard() {
           </div>
 
           {/* Charts Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 ${loading ? 'opacity-60 pointer-events-none' : ''}`}>
             {/* Trends Chart */}
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 relative">
+              {loading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-xl z-10">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                </div>
+              )}
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-5 h-5 text-gray-700" />
                 <h2 className="text-lg font-bold text-gray-900">Claims Trend (Last 6 Months)</h2>
@@ -335,7 +472,12 @@ export default function ReportsDashboard() {
             </div>
 
             {/* Status Distribution */}
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 relative">
+              {loading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-xl z-10">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                </div>
+              )}
               <div className="flex items-center gap-2 mb-4">
                 <BarChart3 className="w-5 h-5 text-gray-700" />
                 <h2 className="text-lg font-bold text-gray-900">Status Distribution</h2>
@@ -359,39 +501,17 @@ export default function ReportsDashboard() {
           </div>
 
           {/* Second Row Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Category Distribution */}
-            {Object.keys(analytics.itemsByCategory).length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-                <div className="flex items-center gap-2 mb-4">
-                  <Package className="w-5 h-5 text-gray-700" />
-                  <h2 className="text-lg font-bold text-gray-900">Claims by Item Category</h2>
-                </div>
-                <Bar 
-                  data={categoryData}
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: {
-                        display: false,
-                      },
-                    },
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        ticks: {
-                          precision: 0
-                        }
-                      }
-                    }
-                  }}
-                />
-              </div>
-            )}
+          <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 ${loading ? 'opacity-60 pointer-events-none' : ''}`}>
+            {/* Category Distribution removed as requested */}
 
             {/* Moderator Workload */}
             {analytics.moderatorWorkload.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 relative">
+                {loading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-xl z-10">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 mb-4">
                   <Users className="w-5 h-5 text-gray-700" />
                   <h2 className="text-lg font-bold text-gray-900">Moderator Workload</h2>

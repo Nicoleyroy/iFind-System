@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import ModSidebar from '../layout/ModSidebar';
 import { API_ENDPOINTS } from '../../utils/constants';
 import { uploadToCloudinary } from '../../utils/cloudinary';
+import { error as swalError } from '../../utils/swal';
 
 // --- Password Change Form ---
 function PasswordChangeForm({ userId, isGoogleAccount, onSuccess, onError }) {
@@ -29,6 +30,17 @@ function PasswordChangeForm({ userId, isGoogleAccount, onSuccess, onError }) {
     }
     if (passwordData.newPassword.length < 6) {
       setLocalError('New password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
+    
+    // Validate password contains uppercase, lowercase, and numbers
+    const hasUppercase = /[A-Z]/.test(passwordData.newPassword);
+    const hasLowercase = /[a-z]/.test(passwordData.newPassword);
+    const hasNumbers = /[0-9]/.test(passwordData.newPassword);
+    
+    if (!hasUppercase || !hasLowercase || !hasNumbers) {
+      setLocalError('Password must contain uppercase letters, lowercase letters, and numbers');
       setLoading(false);
       return;
     }
@@ -86,6 +98,7 @@ function PasswordChangeForm({ userId, isGoogleAccount, onSuccess, onError }) {
           className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
           placeholder="Enter your new password (min. 6 characters)"
         />
+        <p className="text-xs text-gray-600 mt-1">Must contain: uppercase, lowercase, numbers, and special characters recommended</p>
       </div>
       <div>
         <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
@@ -126,6 +139,7 @@ function ModeratorSettings() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [activeSection, setActiveSection] = useState('profile');
+  const [driveStatus, setDriveStatus] = useState({ connected: false });
 
   // Load user data from localStorage
   useEffect(() => {
@@ -154,9 +168,16 @@ function ModeratorSettings() {
   };
 
   // Handle profile picture change
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+      if (!allowedTypes.includes(file.type)) {
+        await swalError('Invalid File Type', 'Photo must be JPG or PNG format.');
+        setProfilePictureFile(null);
+        return;
+      }
+      setError('');
       setProfilePictureFile(file);
       setProfilePicture(URL.createObjectURL(file));
     }
@@ -172,6 +193,33 @@ function ModeratorSettings() {
     try {
       const userId = user?._id || user?.id;
       if (!user || !userId) throw new Error('User not found. Please log in again.');
+
+      if (!formData.name.trim()) {
+        await swalError('Name Required', 'Please enter your name.');
+        setLoading(false);
+        setUploading(false);
+        return;
+      }
+
+      // Validate name contains only letters, spaces, and hyphens
+      const nameRegex = /^[a-zA-Z\s\-']*$/;
+      if (!nameRegex.test(formData.name)) {
+        await swalError('Invalid Name', 'Name must contain only letters, spaces, hyphens, and apostrophes.');
+        setLoading(false);
+        setUploading(false);
+        return;
+      }
+
+      const normalizedPhone = String(formData.phoneNumber || '').trim();
+      if (normalizedPhone) {
+        const digits = normalizedPhone.replace(/[^0-9]/g, '');
+        if (digits.length < 10 || digits.length > 15) {
+          await swalError('Invalid Phone Number', 'Please enter a valid phone number with 10-15 digits.');
+          setLoading(false);
+          setUploading(false);
+          return;
+        }
+      }
       let profilePictureUrl = profilePicture;
       if (profilePictureFile) {
         try {
@@ -198,7 +246,12 @@ function ModeratorSettings() {
       setSuccess('Profile updated successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(`Failed to update profile: ${err.message}`);
+      const fallbackMessage = 'Changes could not be saved. Try again.';
+      if (err && err.message === 'Failed to update profile') {
+        setError(fallbackMessage);
+      } else {
+        setError(err?.message || fallbackMessage);
+      }
     } finally {
       setLoading(false);
       setUploading(false);
@@ -214,6 +267,87 @@ function ModeratorSettings() {
   // Handle input changes
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // Google Drive helpers
+  const fetchDriveStatus = async () => {
+    try {
+      const res = await fetch('/api/backup/drive/status');
+      const json = await res.json();
+      setDriveStatus(json);
+    } catch (e) {
+      console.warn('Failed to fetch drive status', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchDriveStatus();
+  }, []);
+
+  const handleConnectDrive = () => {
+    // Open OAuth flow in new window/tab
+    window.open('/api/backup/drive/connect', '_blank', 'noopener,noreferrer');
+  };
+
+  const handleUploadToDrive = async () => {
+    setError('');
+    setSuccess('');
+    setLoading(true);
+    try {
+      // Create a backup first - use direct server URL to bypass Vite proxy timeout
+      const createRes = await fetch('http://localhost:4000/api/backup/create', { 
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      // Check if response is actually JSON
+      const contentType = createRes.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await createRes.text();
+        console.error('Non-JSON response:', text);
+        throw new Error('Server returned an invalid response. Please check server logs.');
+      }
+      
+      const createJson = await createRes.json();
+      if (!createRes.ok) throw new Error(createJson.message || 'Failed to create backup');
+      const fileName = createJson.backup.fileName;
+
+      // Upload to Drive - use direct server URL to bypass Vite proxy timeout
+      const uploadRes = await fetch('http://localhost:4000/api/backup/drive/upload', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName }),
+      });
+      
+      // Get the response text first to see what we're dealing with
+      const uploadText = await uploadRes.text();
+      console.log('Upload response text:', uploadText);
+      console.log('Upload response status:', uploadRes.status);
+      console.log('Upload response content-type:', uploadRes.headers.get('content-type'));
+      
+      // Try to parse as JSON
+      let uploadJson;
+      try {
+        uploadJson = JSON.parse(uploadText);
+      } catch (parseError) {
+        console.error('Failed to parse response as JSON:', parseError);
+        throw new Error('Server returned an invalid response: ' + uploadText);
+      }
+      
+      if (!uploadRes.ok) throw new Error(uploadJson.message || uploadJson.error || 'Failed to upload to Drive');
+
+      setSuccess('Backup uploaded to Google Drive successfully');
+      setTimeout(() => setSuccess(''), 4000);
+      fetchDriveStatus();
+    } catch (err) {
+      console.error('Drive upload error:', err);
+      setError(err.message || 'Drive upload failed');
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -292,7 +426,7 @@ function ModeratorSettings() {
                     {/* Form Fields */}
                     <div className="space-y-4">
                       <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">Full Name <span className="text-orange-500">*</span></label>
                         <input
                           id="name"
                           type="text"
@@ -303,6 +437,7 @@ function ModeratorSettings() {
                           className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
                           placeholder="Enter your full name"
                         />
+                        <p className="text-xs text-gray-600 mt-1">* Letters, spaces, hyphens, and apostrophes only</p>
                       </div>
                       <div>
                         <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
@@ -345,6 +480,29 @@ function ModeratorSettings() {
               {activeSection === 'account' && (
                 <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
                   <h2 className="text-gray-900 text-2xl font-semibold mb-6">Account Management</h2>
+                  {/* Google Drive Backup Section */}
+                  <div className="mb-6">
+                    <h3 className="text-gray-900 text-lg font-semibold mb-3">Google Drive Backups</h3>
+                    <p className="text-sm text-gray-600 mb-3">Connect your Google Drive to upload backups directly from the dashboard.</p>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={handleConnectDrive}
+                        className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                      >
+                        {driveStatus && driveStatus.connected ? 'Reconnect Google Drive' : 'Connect Google Drive'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleUploadToDrive}
+                        disabled={!driveStatus || !driveStatus.connected || loading}
+                        className={`px-4 py-2 rounded-md text-white ${(!driveStatus || !driveStatus.connected || loading) ? 'bg-gray-400 cursor-not-allowed' : 'bg-orange-500 hover:bg-orange-600'}`}
+                      >
+                        {loading ? 'Uploading...' : 'Create & Upload Backup'}
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">Status: {driveStatus && driveStatus.connected ? 'Connected' : 'Not connected'}</p>
+                  </div>
                   {/* Account Information */}
                   <div className="mb-8">
                     <h3 className="text-gray-900 text-lg font-semibold mb-4">Account Information</h3>

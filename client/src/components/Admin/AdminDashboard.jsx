@@ -96,21 +96,45 @@ const AdminDashboard = () => {
           isPositive: growthPercentage >= 0,
         });
 
-        // Get recent activity (last 10 users)
-        const recentUsers = users
-          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-          .slice(0, 10)
-          .map(user => ({
-            id: user._id || user.id,
-            name: user.name || user.email,
-            email: user.email,
-            role: user.role || 'user',
-            status: user.accountStatus || 'active',
-            createdAt: user.createdAt,
-            profilePicture: user.profilePicture,
-          }));
+        // Get recent activity from audit logs / transactions (prefer server-side logs)
+        try {
+          const logsRes = await fetch(API_ENDPOINTS.AUDIT_LOGS);
+          const logsJson = await logsRes.json();
+          const logs = Array.isArray(logsJson.data) ? logsJson.data : [];
 
-        setRecentActivity(recentUsers);
+          const activities = logs
+            .filter(log => {
+              const role = (log.moderatorId?.role || log.role || log.actorRole || '').toLowerCase();
+              return ['admin', 'moderator'].includes(role);
+            })
+            .sort((a, b) => new Date(b.createdAt || b.timestamp) - new Date(a.createdAt || a.timestamp))
+            .slice(0, 10)
+            .map(log => ({
+              id: log._id || log.id,
+              actor: log.moderatorId?.name || log.actor?.name || log.actorName || log.actorEmail || log.user || 'System',
+              action: log.action || log.type || (log.event && String(log.event)),
+              target: log.targetInfo?.name || log.targetName || log.target || log.resource || null,
+              time: log.createdAt || log.timestamp || log.time || new Date().toISOString(),
+              details: log.details || log.meta || null,
+            }));
+
+          setRecentActivity(activities);
+        } catch (e) {
+          // Fallback: show latest registered users if audit logs unavailable
+          const recentUsers = users
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            .slice(0, 10)
+            .map(user => ({
+              id: user._id || user.id,
+              actor: user.name || user.email,
+              action: 'registered',
+              target: null,
+              time: user.createdAt,
+              details: null,
+            }));
+
+          setRecentActivity(recentUsers);
+        }
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -240,7 +264,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Secondary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-purple-100 rounded-lg">
@@ -268,23 +292,6 @@ const AdminDashboard = () => {
             </div>
             <div className="pt-3 border-t border-gray-100">
               <p className="text-xs text-gray-500">Accounts created in the last 7 days</p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-teal-100 rounded-lg">
-                <CheckCircleIcon className="w-6 h-6 text-teal-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Active Rate</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {((stats.activeUsers / stats.totalUsers) * 100 || 0).toFixed(1)}%
-                </p>
-              </div>
-            </div>
-            <div className="pt-3 border-t border-gray-100">
-              <p className="text-xs text-gray-500">Percentage of active accounts</p>
             </div>
           </div>
         </div>
@@ -333,97 +340,41 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Recent User Activity */}
+        {/* Recent Activity (transactions / audit logs) */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Recent User Activity</h2>
-            <p className="text-sm text-gray-600 mt-1">Latest user registrations</p>
+            <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
+            <p className="text-sm text-gray-600 mt-1">Latest transactions and system events</p>
           </div>
-          <div className="overflow-x-auto max-h-96 overflow-y-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Role
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Joined
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {recentActivity.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" className="px-6 py-8 text-center text-sm text-gray-500">
-                      No recent user activity
-                    </td>
-                  </tr>
-                ) : (
-                  recentActivity.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          {user.profilePicture ? (
-                            <img
-                              src={user.profilePicture}
-                              alt={user.name}
-                              className="flex-shrink-0 h-10 w-10 rounded-full object-cover border-2 border-gray-200"
-                            />
-                          ) : (
-                            <div className="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white font-semibold text-sm border-2 border-gray-200">
-                              {user.name.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{user.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${
-                          user.role === 'admin' 
-                            ? 'bg-purple-100 text-purple-800'
-                            : user.role === 'moderator'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full ${
-                          user.status === 'active'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {user.status === 'active' ? (
-                            <CheckCircleIcon className="w-3 h-3" />
-                          ) : (
-                            <XCircleIcon className="w-3 h-3" />
-                          )}
-                          {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(user.createdAt)}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+          <div className="p-6">
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {recentActivity.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No recent activity</p>
+                </div>
+              ) : (
+                recentActivity.map((act) => (
+                  <div key={act.id} className="flex items-start gap-4">
+                    <div className="mt-1">
+                      <div className={`w-2 h-2 rounded-full ${
+                        (act.action || '').toLowerCase().includes('delete') ? 'bg-red-500' :
+                        (act.action || '').toLowerCase().includes('approve') ? 'bg-green-500' :
+                        'bg-blue-500'
+                      }`} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-900">
+                        <span className="font-semibold">{act.actor}</span>
+                        {act.action ? ` ${act.action}` : ''}
+                        {act.target ? ` • ${act.target}` : ''}
+                      </p>
+                      {act.details && <p className="text-xs text-gray-500 mt-1">{typeof act.details === 'string' ? act.details : JSON.stringify(act.details)}</p>}
+                      <p className="text-xs text-gray-400 mt-1">{formatDate(act.time)}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
         </div>

@@ -34,6 +34,9 @@ const ModeratorDashboard = () => {
   const [recentClaims, setRecentClaims] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -42,6 +45,90 @@ const ModeratorDashboard = () => {
     const interval = setInterval(loadData, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    // load moderator notifications and unread count
+    const loadNotifications = async () => {
+      const userId = user?._id || user?.id;
+      if (!userId) return;
+      try {
+        const res = await fetch(`${API_ENDPOINTS.NOTIFICATIONS}?userId=${userId}`);
+        const json = await res.json();
+        if (Array.isArray(json.data)) setNotifications(json.data);
+      } catch (e) {
+        console.warn('Failed to load moderator notifications', e);
+      }
+    };
+
+    const loadUnread = async () => {
+      const userId = user?._id || user?.id;
+      if (!userId) return;
+      try {
+        const res = await fetch(`${API_ENDPOINTS.NOTIFICATIONS_UNREAD_COUNT}?userId=${userId}`);
+        const json = await res.json();
+        if (json.data && typeof json.data.count === 'number') setUnreadCount(json.data.count);
+      } catch (e) {
+        console.warn('Failed to load unread count', e);
+      }
+    };
+
+    loadNotifications();
+    loadUnread();
+
+    const iv = setInterval(() => { loadNotifications(); loadUnread(); }, 30000);
+    return () => clearInterval(iv);
+  }, [user]);
+
+  const handleNotificationClick = async (notification) => {
+    const userId = user?._id || user?.id;
+    if (!notification) return;
+    if (!notification.read) {
+      try {
+        await fetch(API_ENDPOINTS.NOTIFICATION_READ(notification._id), { method: 'PUT' });
+        // refresh
+        const res = await fetch(`${API_ENDPOINTS.NOTIFICATIONS}?userId=${userId}`);
+        const json = await res.json();
+        if (Array.isArray(json.data)) setNotifications(json.data);
+        const countRes = await fetch(`${API_ENDPOINTS.NOTIFICATIONS_UNREAD_COUNT}?userId=${userId}`);
+        const countJson = await countRes.json();
+        if (countJson.data && typeof countJson.data.count === 'number') setUnreadCount(countJson.data.count);
+      } catch (e) {
+        console.warn('Failed to mark notification read', e);
+      }
+    }
+
+    // navigate for claim related notifications
+    if (notification.relatedClaimId) {
+      navigate('/moderator/item-verification');
+      return;
+    }
+
+    if (notification.relatedItemId) {
+      navigate('/moderator/lost-items');
+      return;
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    const userId = user?._id || user?.id;
+    if (!userId) return;
+    try {
+      await fetch(API_ENDPOINTS.NOTIFICATIONS_READ_ALL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      // refresh
+      const res = await fetch(`${API_ENDPOINTS.NOTIFICATIONS}?userId=${userId}`);
+      const json = await res.json();
+      if (Array.isArray(json.data)) setNotifications(json.data);
+      const countRes = await fetch(`${API_ENDPOINTS.NOTIFICATIONS_UNREAD_COUNT}?userId=${userId}`);
+      const countJson = await countRes.json();
+      if (countJson.data && typeof countJson.data.count === 'number') setUnreadCount(countJson.data.count);
+    } catch (e) {
+      console.warn('Failed to mark all read', e);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -68,8 +155,8 @@ const ModeratorDashboard = () => {
         pendingClaims: claims.filter(c => c.status === 'Pending').length,
         approvedClaims: claims.filter(c => c.status === 'Approved').length,
         rejectedClaims: claims.filter(c => c.status === 'Rejected').length,
-        activeLost: lost.filter(item => item.status === 'active').length,
-        activeFound: found.filter(item => item.status === 'active').length,
+        activeLost: lost.filter(item => (item.status || 'Active') === 'Active').length,
+        activeFound: found.filter(item => (item.status || 'Active') === 'Active').length,
       });
 
       // Recent claims (latest 5)
@@ -78,13 +165,18 @@ const ModeratorDashboard = () => {
         .slice(0, 5);
       setRecentClaims(sortedClaims);
 
-      // Generate recent activity from claims
+      // Generate recent activity from claims (include moderator info when available)
       const activities = sortedClaims.map(claim => ({
         id: claim._id,
         type: claim.status === 'Pending' ? 'pending' : claim.status === 'Approved' ? 'approved' : 'rejected',
         message: `Claim for "${claim.itemId?.name || 'Unknown Item'}" ${claim.status === 'Pending' ? 'submitted' : claim.status.toLowerCase()}`,
         time: claim.updatedAt || claim.createdAt,
         claimantName: claim.claimantId?.name || 'Unknown User',
+        moderator: claim.reviewedBy ? {
+          id: claim.reviewedBy._id || claim.reviewedBy.id || null,
+          name: claim.reviewedBy.name || null,
+          email: claim.reviewedBy.email || null,
+        } : null,
       }));
       setRecentActivity(activities);
 
@@ -111,13 +203,6 @@ const ModeratorDashboard = () => {
       color: "blue",
       link: "/moderator/reports-dashboard",
     },
-    {
-      title: "Manage Items",
-      description: `${stats.activeLost + stats.activeFound} active items`,
-      icon: <PackageSearch className="w-6 h-6" />,
-      color: "green",
-      link: "/moderator/lost-items",
-    },
   ];
 
   return (
@@ -126,28 +211,65 @@ const ModeratorDashboard = () => {
 
       <div className="flex-1 ml-64">
         {/* Compact Header with Gradient */}
-        <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white px-8 py-5">
+        <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white px-8 py-14">
           <div className="flex items-center justify-between">
-            {/* Left: Title & Notification */}
+            {/* Left: Title */}
             <div className="flex items-center gap-6">
-              <div className="relative">
-                <button className="p-2.5 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-all">
-                  <Bell className="w-5 h-5 text-white" />
-                </button>
-                {stats.pendingClaims > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-600 rounded-full flex items-center justify-center text-xs font-bold border-2 border-white">
-                    {stats.pendingClaims > 9 ? '9+' : stats.pendingClaims}
-                  </span>
-                )}
-              </div>
               <div>
-                <h1 className="text-2xl font-bold">Moderator Dashboard</h1>
-                <p className="text-white/80 text-sm mt-0.5">Welcome back, {user?.name || 'Moderator'}</p>
+                <h1 className="text-3xl font-bold">Moderator Dashboard</h1>
+                <p className="text-white/85 text-base mt-1">Welcome back, {user?.name || 'Moderator'}</p>
               </div>
             </div>
 
-            {/* Right: Profile */}
+            {/* Right: Notifications + Profile */}
             <div className="flex items-center gap-3">
+              <div className="relative">
+                <button
+                  onClick={() => setShowNotifications(prev => !prev)}
+                  className="p-2.5 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-all relative"
+                >
+                  <Bell className="w-5 h-5 text-white" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-600 rounded-full flex items-center justify-center text-xs font-bold border-2 border-white">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {showNotifications && (
+                  <div className="absolute right-0 mt-3 w-96 z-50 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div className="p-3 border-b border-gray-100 flex items-center justify-between">
+                      <h3 className="text-sm font-bold">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <button onClick={handleMarkAllRead} className="text-xs text-orange-600 hover:text-orange-700">Mark all as read</button>
+                      )}
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="text-center p-6 text-gray-500">
+                          <Bell className="mx-auto h-10 w-10 text-gray-300" />
+                          <p className="mt-3">No notifications</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 p-3">
+                          {notifications.map(n => (
+                            <div
+                              key={n._id}
+                              onClick={() => { handleNotificationClick(n); setShowNotifications(false); }}
+                              className={`p-2 rounded-lg cursor-pointer ${n.read ? 'bg-gray-50 hover:bg-gray-100' : 'bg-blue-50 hover:bg-blue-100 border-l-4 border-blue-500'}`}
+                            >
+                              <p className={`text-sm font-semibold ${n.read ? 'text-gray-700' : 'text-gray-900'}`}>{n.title}</p>
+                              <p className="text-xs text-gray-600 mt-1 line-clamp-2">{n.message}</p>
+                              <p className="text-xs text-gray-400 mt-1">{new Date(n.createdAt).toLocaleString()}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="text-right">
                 <p className="text-white text-sm font-semibold leading-tight">{user?.name || 'JOANNA NICOLE YROY'}</p>
                 <p className="text-white/70 text-xs">Moderator</p>
@@ -194,6 +316,27 @@ const ModeratorDashboard = () => {
           {/* Dashboard Content */}
           {!loading && !error && (
             <>
+              {/* Alert for Pending Claims */}
+              {stats.pendingClaims > 0 && (
+                <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-yellow-900">Action Required</h3>
+                      <p className="text-sm text-yellow-800 mt-1">
+                        You have <span className="font-bold">{stats.pendingClaims}</span> pending claim{stats.pendingClaims !== 1 ? 's' : ''} waiting for review.
+                      </p>
+                      <button
+                        onClick={() => navigate('/moderator/item-verification')}
+                        className="mt-3 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium"
+                      >
+                        Review Now
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Stats Overview */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                 <StatCard
@@ -230,12 +373,12 @@ const ModeratorDashboard = () => {
               {/* Quick Actions */}
               <div className="mb-6">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
                   {quickActions.map((action, index) => (
                     <button
                       key={index}
                       onClick={() => navigate(action.link)}
-                      className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all text-left group"
+                      className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all text-left group flex flex-col h-full min-h-[150px]"
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className={`p-3 rounded-lg bg-${action.color}-100`}>
@@ -244,7 +387,7 @@ const ModeratorDashboard = () => {
                         <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-orange-600 transition-colors" />
                       </div>
                       <h3 className="font-semibold text-gray-900 mb-1">{action.title}</h3>
-                      <p className="text-sm text-gray-600">{action.description}</p>
+                      <p className="text-sm text-gray-600 mt-auto">{action.description}</p>
                     </button>
                   ))}
                 </div>
@@ -346,6 +489,9 @@ const ModeratorDashboard = () => {
                                 minute: '2-digit'
                               })}
                             </p>
+                            {activity.moderator && (
+                              <p className="text-xs text-gray-500 mt-1">Handled by: <span className="font-semibold text-gray-700">{activity.moderator.name}</span>{activity.moderator.email ? ` • ${activity.moderator.email}` : ''}</p>
+                            )}
                           </div>
                         </div>
                       ))
@@ -354,26 +500,6 @@ const ModeratorDashboard = () => {
                 </div>
               </div>
 
-              {/* Alert for Pending Claims */}
-              {stats.pendingClaims > 0 && (
-                <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-yellow-900">Action Required</h3>
-                      <p className="text-sm text-yellow-800 mt-1">
-                        You have <span className="font-bold">{stats.pendingClaims}</span> pending claim{stats.pendingClaims !== 1 ? 's' : ''} waiting for review.
-                      </p>
-                      <button
-                        onClick={() => navigate('/moderator/item-verification')}
-                        className="mt-3 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium"
-                      >
-                        Review Now
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </>
           )}
         </main>

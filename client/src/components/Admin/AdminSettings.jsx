@@ -15,13 +15,13 @@ import {
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 import { API_ENDPOINTS } from '../../utils/constants';
+import { confirm, inputPrompt, success as swalSuccess, error as swalError } from '../../utils/swal';
 import AdminSidebar from '../layout/AdminSidebar';
 
 const AdminSettings = () => {
   const [activeTab, setActiveTab] = useState('general');
   const [loading, setLoading] = useState(false);
   const [saveMessage, setSaveMessage] = useState({ type: '', text: '' });
-  
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
   const [profileData, setProfileData] = useState({
@@ -30,6 +30,8 @@ const AdminSettings = () => {
     phoneNumber: currentUser.phoneNumber || '',
     profilePicture: currentUser.profilePicture || '',
   });
+
+  const [emailLocked] = useState(true); // Email cannot be changed
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -46,14 +48,37 @@ const AdminSettings = () => {
     allowRegistration: true,
     requireEmailVerification: true,
   });
+  
+  const [loadingSettings, setLoadingSettings] = useState(true);
 
-  // Load system settings from localStorage on mount
+  // Load system settings from API on mount
   useEffect(() => {
-    const savedSettings = localStorage.getItem('admin_system_settings');
-    if (savedSettings) {
-      setSystemSettings(JSON.parse(savedSettings));
-    }
+    const fetchSystemSettings = async () => {
+      try {
+        const response = await fetch(API_ENDPOINTS.SYSTEM_SETTINGS);
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setSystemSettings({
+              siteName: result.data.siteName || 'iFind Lost & Found',
+              siteDescription: result.data.siteDescription || 'Campus Lost and Found Management System',
+              maintenanceMode: result.data.maintenanceMode || false,
+              allowRegistration: result.data.allowRegistration !== undefined ? result.data.allowRegistration : true,
+              requireEmailVerification: result.data.requireEmailVerification !== undefined ? result.data.requireEmailVerification : true,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching system settings:', error);
+      } finally {
+        setLoadingSettings(false);
+      }
+    };
+    
+    fetchSystemSettings();
   }, []);
+
+  // (Drive helpers removed from Admin - Drive is handled by Moderator settings)
 
   const [securityStatus, setSecurityStatus] = useState({
     encryption: {
@@ -177,6 +202,30 @@ const AdminSettings = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      if (!String(profileData.name || '').trim()) {
+        await swalError('Name Required', 'Please enter your name.');
+        setLoading(false);
+        return;
+      }
+
+      // Validate name contains only letters, spaces, and hyphens
+      const nameRegex = /^[a-zA-Z\s\-']*$/;
+      if (!nameRegex.test(profileData.name)) {
+        await swalError('Invalid Name', 'Name must contain only letters, spaces, hyphens, and apostrophes.');
+        setLoading(false);
+        return;
+      }
+
+      const normalizedPhone = String(profileData.phoneNumber || '').trim();
+      if (normalizedPhone) {
+        const digits = normalizedPhone.replace(/[^0-9]/g, '');
+        if (digits.length < 10 || digits.length > 15) {
+          await swalError('Invalid Phone Number', 'Please enter a valid phone number with 10-15 digits.');
+          setLoading(false);
+          return;
+        }
+      }
+
       const response = await fetch(API_ENDPOINTS.USER_BY_ID(currentUser._id || currentUser.id), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -195,11 +244,11 @@ const AdminSettings = () => {
         showSaveMessage('success', 'Profile updated successfully!');
       } else {
         const error = await response.json();
-        showSaveMessage('error', error.message || 'Failed to update profile.');
+        showSaveMessage('error', error.message || 'Changes could not be saved. Try again.');
       }
     } catch (error) {
       console.error('Profile update error:', error);
-      showSaveMessage('error', 'An error occurred while updating profile.');
+      showSaveMessage('error', 'Changes could not be saved. Try again.');
     } finally {
       setLoading(false);
     }
@@ -210,14 +259,15 @@ const AdminSettings = () => {
     if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith('image/')) {
-      showSaveMessage('error', 'Please upload an image file');
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowedTypes.includes(file.type)) {
+      await swalError('Invalid File Type', 'Photo must be JPG or PNG format.');
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      showSaveMessage('error', 'Image size must be less than 5MB');
+      await swalError('File Too Large', 'Image size must be less than 5MB.');
       return;
     }
 
@@ -256,6 +306,16 @@ const AdminSettings = () => {
       return;
     }
 
+    // Validate password contains uppercase, lowercase, and numbers
+    const hasUppercase = /[A-Z]/.test(passwordData.newPassword);
+    const hasLowercase = /[a-z]/.test(passwordData.newPassword);
+    const hasNumbers = /[0-9]/.test(passwordData.newPassword);
+    
+    if (!hasUppercase || !hasLowercase || !hasNumbers) {
+      showSaveMessage('error', 'Password must contain uppercase letters, lowercase letters, and numbers');
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await fetch(API_ENDPOINTS.CHANGE_PASSWORD(currentUser._id || currentUser.id), {
@@ -286,45 +346,66 @@ const AdminSettings = () => {
     }
   };
 
-  const handleSaveSystemSettings = () => {
+  const handleSaveSystemSettings = async () => {
     setLoading(true);
-    setTimeout(() => {
-      localStorage.setItem('admin_system_settings', JSON.stringify(systemSettings));
-      // Update document title if site name changed
-      document.title = systemSettings.siteName;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(API_ENDPOINTS.SYSTEM_SETTINGS, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(systemSettings),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // Update document title if site name changed
+        document.title = systemSettings.siteName;
+        await swalSuccess('Success', 'System settings saved successfully!');
+      } else {
+        await swalError('Error', result.message || 'Failed to save system settings');
+      }
+    } catch (error) {
+      console.error('Error saving system settings:', error);
+      await swalError('Error', 'An error occurred while saving system settings');
+    } finally {
       setLoading(false);
-      showSaveMessage('success', 'System settings saved successfully!');
-    }, 500);
+    }
   };
 
   const handleManualBackup = async () => {
     // Show confirmation dialog
-    const confirmed = window.confirm(
+    const confirmed = await confirm(
+      'Create backup?',
       'Are you sure you want to create a manual backup? This may take several minutes.'
     );
-    
     if (!confirmed) return;
-    
     setProcessing(true);
-    try {
-      // Call backend API to create backup
-      const response = await fetch(API_ENDPOINTS.BACKUP_CREATE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
+    // Retry logic: try up to 3 times with exponential backoff
+    const maxAttempts = 3;
+    let attempt = 0;
+    let lastError = null;
+    while (attempt < maxAttempts) {
+      attempt += 1;
+      try {
+        const response = await fetch(API_ENDPOINTS.BACKUP_CREATE, { method: 'POST' });
+        if (!response.ok) {
+          const text = await response.text().catch(() => null);
+          const body = text ? (JSON.parse(text) || null) : null;
+          const msg = body && body.message ? body.message : `Backup creation failed (status ${response.status})`;
+          throw new Error(msg);
+        }
+        const data = await response.json();
       
-      if (!response.ok) {
-        throw new Error('Backup creation failed');
-      }
-      
-      const data = await response.json();
-      
-      // Refresh backup history
-      const historyResponse = await fetch(API_ENDPOINTS.BACKUP_HISTORY);
-      if (historyResponse.ok) {
-        const historyData = await historyResponse.json();
-        setBackupHistory(historyData.backups || []);
-      }
+        // Refresh backup history
+        const historyResponse = await fetch(API_ENDPOINTS.BACKUP_HISTORY);
+        if (historyResponse.ok) {
+          const historyData = await historyResponse.json();
+          setBackupHistory(historyData.backups || []);
+        }
       
       // Update security status with new backup info
       setSecurityStatus(prev => ({
@@ -336,25 +417,40 @@ const AdminSettings = () => {
         },
       }));
       
-      showSaveMessage('success', `Backup completed successfully! Size: ${data.backup.size}, Duration: ${data.backup.duration}`);
-    } catch (error) {
-      console.error('Backup error:', error);
-      showSaveMessage('error', 'Backup failed. Please try again.');
-    } finally {
-      setProcessing(false);
+        showSaveMessage('success', `Backup completed successfully! Size: ${data.backup.size}, Duration: ${data.backup.duration}`);
+        // success -> break retry loop
+        lastError = null;
+        break;
+      } catch (error) {
+        console.error(`Backup attempt ${attempt} failed:`, error);
+        lastError = error;
+        if (attempt < maxAttempts) {
+          // wait before retrying
+          const delayMs = 1000 * Math.pow(2, attempt - 1);
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+          continue;
+        }
+      }
     }
+
+    if (lastError) {
+      showSaveMessage('error', lastError.message || 'Backup failed after multiple attempts. Please try again.');
+    }
+
+    setProcessing(false);
   };
 
   const handleRestoreBackup = async (backupFileName, backupDate) => {
     // Show warning confirmation
-    const confirmed = window.confirm(
-      `⚠️ WARNING: Restoring from backup will replace all current data with data from ${new Date(backupDate).toLocaleString()}.\n\nThis action cannot be undone. Are you sure you want to continue?`
+    const confirmed = await confirm(
+      'Create backup?',
+      'Are you sure you want to create a manual backup? This may take several minutes.'
     );
     
     if (!confirmed) return;
     
     // Double confirmation for critical action
-    const finalConfirm = prompt('Type YES (in capital letters) to confirm restore:');
+    const finalConfirm = await inputPrompt('Type YES (in capital letters) to confirm restore:');
     
     if (finalConfirm !== 'YES') {
       showSaveMessage('error', 'Restore cancelled. You must type YES to confirm.');
@@ -540,58 +636,67 @@ const AdminSettings = () => {
               {activeTab === 'general' && (
                 <div className="space-y-6">
                   <h3 className="text-lg font-semibold text-gray-900">System Settings</h3>
-                  <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">Site Name</label>
-                      <input
-                        type="text"
-                        value={systemSettings.siteName}
-                        onChange={(e) => setSystemSettings({ ...systemSettings, siteName: e.target.value })}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      />
+                  {loadingSettings ? (
+                    <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mb-4"></div>
+                      <p className="text-gray-600">Loading system settings...</p>
                     </div>
+                  ) : (
+                    <>
+                      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-900 mb-2">Site Name</label>
+                          <input
+                            type="text"
+                            value={systemSettings.siteName}
+                            onChange={(e) => setSystemSettings({ ...systemSettings, siteName: e.target.value })}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          />
+                        </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">Site Description</label>
-                      <textarea
-                        rows="3"
-                        value={systemSettings.siteDescription}
-                        onChange={(e) => setSystemSettings({ ...systemSettings, siteDescription: e.target.value })}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      />
-                    </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-900 mb-2">Site Description</label>
+                          <textarea
+                            rows="3"
+                            value={systemSettings.siteDescription}
+                            onChange={(e) => setSystemSettings({ ...systemSettings, siteDescription: e.target.value })}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          />
+                        </div>
 
-                    <Toggle
-                      enabled={systemSettings.maintenanceMode}
-                      onChange={(val) => setSystemSettings({ ...systemSettings, maintenanceMode: val })}
-                      label="Maintenance Mode"
-                      description="Enable maintenance mode to prevent user access"
-                    />
+                        <Toggle
+                          enabled={systemSettings.maintenanceMode}
+                          onChange={(val) => setSystemSettings({ ...systemSettings, maintenanceMode: val })}
+                          label="Maintenance Mode"
+                          description="Enable maintenance mode to prevent user access"
+                        />
 
-                    <Toggle
-                      enabled={systemSettings.allowRegistration}
-                      onChange={(val) => setSystemSettings({ ...systemSettings, allowRegistration: val })}
-                      label="Allow User Registration"
-                      description="Allow new users to register accounts"
-                    />
+                        <Toggle
+                          enabled={systemSettings.allowRegistration}
+                          onChange={(val) => setSystemSettings({ ...systemSettings, allowRegistration: val })}
+                          label="Allow User Registration"
+                          description="Allow new users to register accounts"
+                        />
 
-                    <Toggle
-                      enabled={systemSettings.requireEmailVerification}
-                      onChange={(val) => setSystemSettings({ ...systemSettings, requireEmailVerification: val })}
-                      label="Require Email Verification"
-                      description="Users must verify their email before accessing the system"
-                    />
-                  </div>
+                        <Toggle
+                          enabled={systemSettings.requireEmailVerification}
+                          onChange={(val) => setSystemSettings({ ...systemSettings, requireEmailVerification: val })}
+                          label="Require Email Verification"
+                          description="Users must verify their email before accessing the system"
+                        />
+                      </div>
 
-                  <div className="flex justify-end">
-                    <button
-                      onClick={handleSaveSystemSettings}
-                      disabled={loading}
-                      className="px-6 py-2.5 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 transition-colors"
-                    >
-                      {loading ? 'Saving...' : 'Save Settings'}
-                    </button>
-                  </div>
+                      <div className="flex justify-end">
+                        <button
+                          onClick={handleSaveSystemSettings}
+                          disabled={loading}
+                          className="px-6 py-2.5 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 transition-colors"
+                        >
+                          {loading ? 'Saving...' : 'Save Settings'}
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -1150,7 +1255,7 @@ const AdminSettings = () => {
                     <h4 className="text-md font-semibold text-gray-900 mb-4">Personal Information</h4>
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-2">Full Name *</label>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">Full Name <span className="text-orange-500">*</span></label>
                         <input
                           type="text"
                           value={profileData.name}
@@ -1159,18 +1264,22 @@ const AdminSettings = () => {
                           className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                           placeholder="Enter your full name"
                         />
+                        <p className="text-xs text-gray-600 mt-1">* Letters, spaces, hyphens, and apostrophes only</p>
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-2">Email Address *</label>
+                        <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
+                          Email Address *
+                          <LockClosedIcon className="w-4 h-4 text-gray-400" title="Email cannot be changed" />
+                        </label>
                         <input
                           type="email"
                           value={profileData.email}
-                          onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                          required
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          disabled={emailLocked}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
                           placeholder="your.email@example.com"
                         />
+                        <p className="mt-1 text-xs text-gray-500">Email address cannot be changed for security reasons</p>
                       </div>
 
                       <div>
@@ -1257,11 +1366,19 @@ const AdminSettings = () => {
                           </li>
                           <li className="flex items-center gap-2">
                             <CheckCircleIcon className="w-4 h-4" />
-                            Include numbers and letters
+                            Uppercase letters (A-Z)
                           </li>
                           <li className="flex items-center gap-2">
                             <CheckCircleIcon className="w-4 h-4" />
-                            Avoid common passwords
+                            Lowercase letters (a-z)
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <CheckCircleIcon className="w-4 h-4" />
+                            Numbers (0-9)
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <CheckCircleIcon className="w-4 h-4" />
+                            Special characters recommended (!@#$%^&*)
                           </li>
                         </ul>
                       </div>

@@ -25,7 +25,7 @@ router.get('/audit-logs', async (req, res) => {
     }
     
     const logs = await AuditLogModel.find(filter)
-      .populate('moderatorId', 'name email')
+      .populate('moderatorId', 'name email role')
       .sort({ createdAt: -1 })
       .limit(100)
       .lean();

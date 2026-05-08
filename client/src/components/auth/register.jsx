@@ -22,6 +22,18 @@ const Register = () => {
     e.preventDefault();
     setError("");
     setSuccess(false);
+
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.confirmPassword) {
+      setError("Please fill out all required fields.");
+      return;
+    }
+
+    const emailValue = String(formData.email).toLowerCase().trim();
+    const emailPattern = /^\S+@\S+\.\S+$/;
+    if (!emailPattern.test(emailValue)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
     
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match!");
@@ -31,7 +43,7 @@ const Register = () => {
     // Combine first and last name to match backend
     const payload = {
       name: `${formData.firstName} ${formData.lastName}`,
-      email: formData.email,
+      email: emailValue,
       password: formData.password,
     };
 
@@ -127,7 +139,7 @@ const Register = () => {
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                   <div>
-                    <p className="font-semibold">Account created successfully!</p>
+                    <p className="font-semibold">Account Created Successfully!</p>
                     <p className="text-sm">Redirecting to login page...</p>
                   </div>
                 </div>

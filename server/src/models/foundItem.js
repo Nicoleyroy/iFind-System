@@ -37,10 +37,14 @@ const FoundItemSchema = new Schema(
       type: String,
       default: '',
     },
+    images: {
+      type: [String],
+      default: [],
+    },
     status: {
       type: String,
       enum: {
-        values: ['Active', 'Archived', 'Deleted', 'Unclaimed', 'Pending', 'Claimed'],
+        values: ['Active', 'Archived', 'Deleted', 'Unclaimed', 'Pending', 'Claimed', 'Returned'],
         message: 'Status must be Active, Archived, Deleted, Unclaimed, Pending, or Claimed',
       },
       default: 'Active',

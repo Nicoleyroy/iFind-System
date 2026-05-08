@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Search, Filter, Eye, Check, X, Clock, AlertCircle, 
   User, Package, Calendar, MapPin, FileText, Image as ImageIcon,
-  ChevronDown, ChevronUp, CheckCircle, XCircle, Bell, UserCircle, Trash2
+  ChevronDown, ChevronUp, CheckCircle, XCircle, Bell, UserCircle
 } from 'lucide-react';
 import { API_ENDPOINTS } from '../../utils/constants';
+import { confirm, success as swalSuccess, error as swalError } from '../../utils/swal';
 import ModSidebar from '../layout/ModSidebar';
 
 export default function ClaimTicketVerification() {
+  const navigate = useNavigate();
   const [claims, setClaims] = useState([]);
   const [filteredClaims, setFilteredClaims] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,6 +27,7 @@ export default function ClaimTicketVerification() {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedClaim, setExpandedClaim] = useState(null);
   const [sortBy, setSortBy] = useState('newest'); // newest, oldest, item-name
+  const [viewingClaim, setViewingClaim] = useState(null); // For full-screen view
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -38,10 +42,91 @@ export default function ClaimTicketVerification() {
   });
   
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     fetchClaims();
   }, []);
+
+  useEffect(() => {
+    const loadNotifications = async () => {
+      const userId = user?._id || user?.id;
+      if (!userId) return;
+      try {
+        const res = await fetch(`${API_ENDPOINTS.NOTIFICATIONS}?userId=${userId}`);
+        const json = await res.json();
+        if (Array.isArray(json.data)) setNotifications(json.data);
+      } catch (e) {
+        console.warn('Failed to load moderator notifications', e);
+      }
+    };
+
+    const loadUnread = async () => {
+      const userId = user?._id || user?.id;
+      if (!userId) return;
+      try {
+        const res = await fetch(`${API_ENDPOINTS.NOTIFICATIONS_UNREAD_COUNT}?userId=${userId}`);
+        const json = await res.json();
+        if (json.data && typeof json.data.count === 'number') setUnreadCount(json.data.count);
+      } catch (e) {
+        console.warn('Failed to load unread count', e);
+      }
+    };
+
+    loadNotifications();
+    loadUnread();
+
+    const iv = setInterval(() => { loadNotifications(); loadUnread(); }, 30000);
+    return () => clearInterval(iv);
+  }, [user]);
+
+  const handleNotificationClick = async (notification) => {
+    const userId = user?._id || user?.id;
+    if (!notification) return;
+    if (!notification.read) {
+      try {
+        await fetch(API_ENDPOINTS.NOTIFICATION_READ(notification._id), { method: 'PUT' });
+        const res = await fetch(`${API_ENDPOINTS.NOTIFICATIONS}?userId=${userId}`);
+        const json = await res.json();
+        if (Array.isArray(json.data)) setNotifications(json.data);
+        const countRes = await fetch(`${API_ENDPOINTS.NOTIFICATIONS_UNREAD_COUNT}?userId=${userId}`);
+        const countJson = await countRes.json();
+        if (countJson.data && typeof countJson.data.count === 'number') setUnreadCount(countJson.data.count);
+      } catch (e) {
+        console.warn('Failed to mark notification read', e);
+      }
+    }
+
+    if (notification.relatedClaimId) {
+      navigate('/moderator/item-verification');
+      return;
+    }
+
+    if (notification.relatedItemId) {
+      navigate('/moderator/LostItem/Management');
+      return;
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    const userId = user?._id || user?.id;
+    if (!userId) return;
+    try {
+      await fetch(API_ENDPOINTS.NOTIFICATIONS_READ_ALL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      const res = await fetch(`${API_ENDPOINTS.NOTIFICATIONS}?userId=${userId}`);
+      const json = await res.json();
+      if (Array.isArray(json.data)) setNotifications(json.data);
+      setUnreadCount(0);
+    } catch (e) {
+      console.warn('Failed to mark all notifications read', e);
+    }
+  };
 
   useEffect(() => {
     filterClaims();
@@ -148,7 +233,7 @@ export default function ClaimTicketVerification() {
         );
         
         // Show success message
-        alert(`Claim ${status.toLowerCase()} successfully!`);
+        swalSuccess('Success', `Claim ${status.toLowerCase()} successfully!`);
         
         // Close modal
         setShowModal(false);
@@ -158,12 +243,14 @@ export default function ClaimTicketVerification() {
         
         // Refresh claims
         fetchClaims();
+        // notify activity listeners to refresh logs immediately
+        try { window.dispatchEvent(new CustomEvent('activity:updated', { detail: { type: 'claim', id: data.data?._id } })); } catch (e) { /* ignore */ }
       } else {
-        alert(data.message || 'Failed to update claim');
+        swalError('Error', data.message || 'Failed to update claim');
       }
     } catch (error) {
       console.error('Error reviewing claim:', error);
-      alert('An error occurred while processing the claim');
+      swalError('Error', 'An error occurred while processing the claim');
     } finally {
       setProcessing(false);
     }
@@ -178,9 +265,8 @@ export default function ClaimTicketVerification() {
 
   const handleDeleteClaim = async (claimId) => {
     // Confirm deletion
-    if (!window.confirm('Are you sure you want to delete this claim? This action cannot be undone.')) {
-      return;
-    }
+    const ok = await confirm('Delete claim?', 'Are you sure you want to delete this claim? This action cannot be undone.');
+    if (!ok) return;
 
     try {
       setProcessing(true);
@@ -198,16 +284,16 @@ export default function ClaimTicketVerification() {
         setClaims(prevClaims => prevClaims.filter(claim => claim._id !== claimId));
         
         // Show success message
-        alert('Claim deleted successfully!');
+        swalSuccess('Deleted', 'Claim deleted successfully!');
         
         // Refresh claims to update stats
         fetchClaims();
       } else {
-        alert(data.message || 'Failed to delete claim');
+        swalError('Error', data.message || 'Failed to delete claim');
       }
     } catch (error) {
       console.error('Error deleting claim:', error);
-      alert('An error occurred while deleting the claim');
+      swalError('Error', 'An error occurred while deleting the claim');
     } finally {
       setProcessing(false);
     }
@@ -257,44 +343,81 @@ export default function ClaimTicketVerification() {
       <ModSidebar />
       
       <div className="flex-1 ml-64">
-       {/* Modern Header with Gradient */}
-               <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white px-8 py-10">
-                 <div className="flex items-center justify-between mb-6">
-                   {/* Notification Bell */}
-                   <div className="relative">
-                     <button className="p-3 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-all">
-                       <Bell className="w-6 h-6 text-white" />
-                     </button>
-                     
-                   </div>
-       
-                   {/* Right: Profile & Export Button */}
-                   <div className="flex items-center gap-4">
-                     <div className="flex items-center gap-3">
-                       <div className="text-right">
-                         <p className="text-white text-sm font-semibold leading-tight">JOANNA NICOLE YROY</p>
-                         <p className="text-white/70 text-xs">Moderator</p>
-                       </div>
-                       <div className="w-11 h-11 bg-orange-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
-                         <span className="text-white text-lg font-bold">J</span>
-                       </div>
-                     </div>
-                   </div>
-                 </div>
-            
-       
-                 <div className="flex items-center justify-between">
-                   <div>
-                     <h1 className="text-4xl font-bold mb-2">Claim Request</h1>
-                     <p className="text-red-100 text-lg">Manage and track all lost items in the system</p>
-                   </div>
+        {/* Compact Header with Gradient */}
+        <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white px-8 py-14">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <div>
+                <h1 className="text-3xl font-bold">Claim Requests</h1>
+                <p className="text-white/85 text-base mt-1">Review and verify claim requests</p>
               </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <button
+                  onClick={() => setShowNotifications(prev => !prev)}
+                  className="p-2.5 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-all relative"
+                >
+                  <Bell className="w-5 h-5 text-white" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-600 rounded-full flex items-center justify-center text-xs font-bold border-2 border-white">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {showNotifications && (
+                  <div className="absolute right-0 mt-3 w-96 z-50 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div className="p-3 border-b border-gray-100 flex items-center justify-between">
+                      <h3 className="text-sm font-bold">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <button onClick={handleMarkAllRead} className="text-xs text-orange-600 hover:text-orange-700">Mark all as read</button>
+                      )}
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="text-center p-6 text-gray-500">
+                          <Bell className="mx-auto h-10 w-10 text-gray-300" />
+                          <p className="mt-3">No notifications</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 p-3">
+                          {notifications.map(n => (
+                            <div
+                              key={n._id}
+                              onClick={() => { handleNotificationClick(n); setShowNotifications(false); }}
+                              className={`p-2 rounded-lg cursor-pointer ${n.read ? 'bg-gray-50 hover:bg-gray-100' : 'bg-blue-50 hover:bg-blue-100 border-l-4 border-blue-500'}`}
+                            >
+                              <p className={`text-sm font-semibold ${n.read ? 'text-gray-700' : 'text-gray-900'}`}>{n.title}</p>
+                              <p className="text-xs text-gray-600 mt-1 line-clamp-2">{n.message}</p>
+                              <p className="text-xs text-gray-400 mt-1">{new Date(n.createdAt).toLocaleString()}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <p className="text-white text-sm font-semibold leading-tight">{user?.name || 'Moderator'}</p>
+                  <p className="text-white/70 text-xs">Moderator</p>
+                </div>
+                <div className="w-11 h-11 bg-orange-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
+                  <span className="text-white text-lg font-bold">{(user?.name || 'M').charAt(0).toUpperCase()}</span>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
        
 
         <div className="p-6">
       {/* Stats Cards */}
-      <div className="-mt-12 mb-8">
+      <div className="mt-6 mb-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
           <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border border-gray-100">
             <div className="flex items-start justify-between mb-4">
@@ -306,7 +429,7 @@ export default function ClaimTicketVerification() {
                 <Package className="w-8 h-8 text-blue-600" />
               </div>
             </div>
-            <button className="mt-3 w-full px-4 py-2 bg-blue-50 hover:bg-blue-100 rounded-lg text-sm font-semibold text-blue-600 transition-colors">
+            <button className="mt-3 w-full px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95">
               View All
             </button>
           </div>
@@ -321,7 +444,7 @@ export default function ClaimTicketVerification() {
                 <Clock className="w-8 h-8 text-yellow-600" />
               </div>
             </div>
-            <button className="mt-3 w-full px-4 py-2 bg-yellow-50 hover:bg-yellow-100 rounded-lg text-sm font-semibold text-yellow-600 transition-colors">
+            <button className="mt-3 w-full px-4 py-2 bg-yellow-600 text-white hover:bg-yellow-700 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95">
               Review
             </button>
           </div>
@@ -336,7 +459,7 @@ export default function ClaimTicketVerification() {
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
             </div>
-            <button className="mt-3 w-full px-4 py-2 bg-green-50 hover:bg-green-100 rounded-lg text-sm font-semibold text-green-600 transition-colors">
+            <button className="mt-3 w-full px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95">
               View
             </button>
           </div>
@@ -351,7 +474,7 @@ export default function ClaimTicketVerification() {
                 <XCircle className="w-8 h-8 text-red-600" />
               </div>
             </div>
-            <button className="mt-3 w-full px-4 py-2 bg-red-50 hover:bg-red-100 rounded-lg text-sm font-semibold text-red-600 transition-colors">
+            <button className="mt-3 w-full px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95">
               Review
             </button>
           </div>
@@ -363,10 +486,10 @@ export default function ClaimTicketVerification() {
         <div className="flex border-b border-gray-200">
           <button
             onClick={() => setActiveTab('Pending')}
-            className={`flex-1 px-6 py-4 font-medium transition-colors ${
+            className={`flex-1 px-6 py-4 font-medium transition-all ${
               activeTab === 'Pending'
                 ? 'bg-yellow-50 text-yellow-700 border-b-2 border-yellow-600'
-                : 'text-gray-600 hover:bg-gray-50'
+                : 'text-gray-600 hover:bg-gray-50 hover:underline'
             }`}
           >
             <div className="flex items-center justify-center gap-2">
@@ -379,10 +502,10 @@ export default function ClaimTicketVerification() {
           </button>
           <button
             onClick={() => setActiveTab('Approved')}
-            className={`flex-1 px-6 py-4 font-medium transition-colors ${
+            className={`flex-1 px-6 py-4 font-medium transition-all ${
               activeTab === 'Approved'
                 ? 'bg-green-50 text-green-700 border-b-2 border-green-600'
-                : 'text-gray-600 hover:bg-gray-50'
+                : 'text-gray-600 hover:bg-gray-50 hover:underline'
             }`}
           >
             <div className="flex items-center justify-center gap-2">
@@ -395,10 +518,10 @@ export default function ClaimTicketVerification() {
           </button>
           <button
             onClick={() => setActiveTab('Rejected')}
-            className={`flex-1 px-6 py-4 font-medium transition-colors ${
+            className={`flex-1 px-6 py-4 font-medium transition-all ${
               activeTab === 'Rejected'
                 ? 'bg-red-50 text-red-700 border-b-2 border-red-600'
-                : 'text-gray-600 hover:bg-gray-50'
+                : 'text-gray-600 hover:bg-gray-50 hover:underline'
             }`}
           >
             <div className="flex items-center justify-center gap-2">
@@ -424,7 +547,7 @@ export default function ClaimTicketVerification() {
                 placeholder="Search by item name, claimant name, or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all hover:border-orange-400 hover:shadow-sm"
               />
             </div>
 
@@ -432,7 +555,7 @@ export default function ClaimTicketVerification() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white min-w-[180px]"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white min-w-[180px] transition-all hover:border-orange-400 hover:shadow-sm"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -498,161 +621,17 @@ export default function ClaimTicketVerification() {
 
                     <div className="flex gap-2 ml-4">
                       <button
-                        onClick={() => setExpandedClaim(expandedClaim === claim._id ? null : claim._id)}
-                        className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        onClick={() => setViewingClaim(claim)}
+                        className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-all font-medium shadow-sm hover:shadow-md active:scale-95"
                         title="View Details"
                       >
-                        {expandedClaim === claim._id ? (
-                          <ChevronUp className="w-5 h-5" />
-                        ) : (
-                          <ChevronDown className="w-5 h-5" />
-                        )}
+                        View Details
                       </button>
                     </div>
                   </div>
                 </div>
 
-                {/* Expanded Details */}
-                {expandedClaim === claim._id && (
-                  <div className="px-6 pb-6 border-t border-gray-100">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
-                      {/* Item Details */}
-                      <div className="space-y-4">
-                        <h4 className="font-semibold text-gray-900 mb-3">Item Information</h4>
-                        
-                        {claim.itemId?.imageUrl && (
-                          <div className="mb-4">
-                            <img
-                              src={claim.itemId.imageUrl}
-                              alt={claim.itemId.name}
-                              className="w-full h-48 object-cover rounded-lg border border-gray-200"
-                            />
-                          </div>
-                        )}
-                        
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Description:</span>
-                            <span className="font-medium text-gray-900 text-right max-w-[60%]">
-                              {claim.itemId?.description || 'No description'}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Location:</span>
-                            <span className="font-medium text-gray-900">
-                              {claim.itemId?.location || 'N/A'}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Date Found:</span>
-                            <span className="font-medium text-gray-900">
-                              {claim.itemId?.date ? formatDate(claim.itemId.date) : 'N/A'}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Item Status:</span>
-                            <span className="font-medium text-gray-900">
-                              {claim.itemId?.status || 'N/A'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Claimant Details */}
-                      <div className="space-y-4">
-                        <h4 className="font-semibold text-gray-900 mb-3">Claimant Information</h4>
-                        
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Name:</span>
-                            <span className="font-medium text-gray-900">
-                              {claim.claimantId?.name || 'N/A'}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Email:</span>
-                            <span className="font-medium text-gray-900">
-                              {claim.claimantId?.email || 'N/A'}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Phone:</span>
-                            <span className="font-medium text-gray-900">
-                              {claim.claimantId?.phoneNumber || 'N/A'}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="mt-4">
-                          <h5 className="text-sm font-medium text-gray-700 mb-2">Proof of Ownership:</h5>
-                          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                            <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                              {claim.proofOfOwnership || 'No proof provided'}
-                            </p>
-                          </div>
-                        </div>
-
-                        {claim.imageUrl && (
-                          <div className="mt-4">
-                            <div className="bg-white border border-gray-200 rounded-lg p-2 max-w-md">
-                              <img
-                                src={claim.imageUrl}
-                                alt={`Claim proof - ${claim.claimantId?.name || 'claimant'}`}
-                                className="w-full h-48 object-cover rounded-md border cursor-pointer"
-                                onClick={() => {
-                                  setPreviewImageUrl(claim.imageUrl);
-                                  setIsPreviewOpen(true);
-                                }}
-                              />
-                            </div>
-                          </div>
-                        )}
-
-                        {claim.reviewNotes && (
-                          <div className="mt-4">
-                            <h5 className="text-sm font-medium text-gray-700 mb-2">Review Notes:</h5>
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                              <p className="text-sm text-gray-700">{claim.reviewNotes}</p>
-                              {claim.reviewedBy && (
-                                <p className="text-xs text-gray-500 mt-2">
-                                  Reviewed by: {claim.reviewedBy.name}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    {claim.status === 'Pending' && (
-                      <div className="flex gap-3 mt-6 pt-4 border-t border-gray-200">
-                        <button
-                          onClick={() => openReviewModal(claim, 'Approved')}
-                          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-                        >
-                          <Check className="w-5 h-5" />
-                          Approve Claim
-                        </button>
-                        <button
-                          onClick={() => openReviewModal(claim, 'Rejected')}
-                          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-                        >
-                          <X className="w-5 h-5" />
-                          Reject Claim
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClaim(claim._id)}
-                          disabled={processing}
-                          className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors font-medium ml-auto disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                {/* Expanded Details - Removed, now using full-screen view */}
               </div>
             ))}
           </div>
@@ -810,11 +789,11 @@ export default function ClaimTicketVerification() {
       )}
       {/* Image Preview Modal */}
       {isPreviewOpen && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
           <div className="relative max-w-5xl w-full">
             <button
               onClick={() => { setIsPreviewOpen(false); setPreviewImageUrl(null); }}
-              className="absolute top-3 right-3 z-50 bg-white/80 rounded-full p-2 hover:bg-white"
+              className="absolute top-3 right-3 z-[70] bg-white/80 rounded-full p-2 hover:bg-white"
               aria-label="Close image preview"
             >
               <svg className="w-6 h-6 text-gray-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -827,6 +806,230 @@ export default function ClaimTicketVerification() {
               alt="Preview"
               className="w-full h-[80vh] object-contain rounded-md mx-auto"
             />
+          </div>
+        </div>
+      )}
+
+      {/* Full-Screen Claim Details View */}
+      {viewingClaim && (
+        <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
+          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+            {/* Header with Back Button */}
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-8 px-8 shadow-lg sticky top-0 z-10">
+              <div className="max-w-[1600px] mx-auto flex items-center gap-4">
+                <button
+                  onClick={() => setViewingClaim(null)}
+                  className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <ChevronUp className="w-6 h-6 -rotate-90" />
+                </button>
+                <div className="flex-1">
+                  <h1 className="text-3xl font-bold">{viewingClaim.itemId?.name || 'Claim Details'}</h1>
+                  <p className="text-white/90 text-base mt-2">
+                    Submitted: {formatDate(viewingClaim.createdAt)}
+                  </p>
+                </div>
+                <div className="ml-auto">
+                  {getStatusBadge(viewingClaim.status)}
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="max-w-[1600px] mx-auto px-8 py-12">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-10">
+                {/* Item Information */}
+                <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+                    <Package className="w-7 h-7 text-orange-600" />
+                    Item Information
+                  </h2>
+                  
+                  {viewingClaim.itemId?.imageUrl && (
+                    <div className="mb-8">
+                      <img
+                        src={viewingClaim.itemId.imageUrl}
+                        alt={viewingClaim.itemId.name}
+                        className="w-full h-96 object-cover rounded-xl border border-gray-200 shadow-sm"
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="space-y-6">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-sm text-gray-500 font-semibold uppercase tracking-wide">Description</span>
+                      <p className="text-gray-900 bg-gray-50 p-4 rounded-lg leading-relaxed">
+                        {viewingClaim.itemId?.description || 'No description provided'}
+                      </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="flex flex-col gap-2">
+                        <span className="text-sm text-gray-500 font-semibold uppercase tracking-wide">Category</span>
+                        <p className="text-gray-900 font-semibold text-lg">{viewingClaim.itemId?.category || 'N/A'}</p>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <span className="text-sm text-gray-500 font-semibold uppercase tracking-wide">Item Status</span>
+                        <p className="text-gray-900 font-semibold text-lg">{viewingClaim.itemId?.status || 'N/A'}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 pt-2">
+                      <span className="text-sm text-gray-500 font-semibold uppercase tracking-wide flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        Location Found
+                      </span>
+                      <p className="text-gray-900 font-semibold text-lg">{viewingClaim.itemId?.location || 'N/A'}</p>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <span className="text-sm text-gray-500 font-semibold uppercase tracking-wide flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        Date Found
+                      </span>
+                      <p className="text-gray-900 font-semibold text-lg">
+                        {viewingClaim.itemId?.date ? formatDate(viewingClaim.itemId.date) : 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Claimant Information */}
+                <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+                    <User className="w-7 h-7 text-orange-600" />
+                    Claimant Information
+                  </h2>
+                  
+                  <div className="space-y-6">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-sm text-gray-500 font-semibold uppercase tracking-wide">Full Name</span>
+                      <p className="text-gray-900 font-semibold text-xl">
+                        {viewingClaim.claimantId?.name || 'N/A'}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <span className="text-sm text-gray-500 font-semibold uppercase tracking-wide">Email Address</span>
+                      <p className="text-gray-900 font-semibold text-lg">
+                        {viewingClaim.claimantId?.email || 'N/A'}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <span className="text-sm text-gray-500 font-semibold uppercase tracking-wide">Phone Number</span>
+                      <p className="text-gray-900 font-semibold text-lg">
+                        {viewingClaim.claimantId?.phoneNumber || 'N/A'}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col gap-3 pt-6 border-t-2 border-gray-200">
+                      <span className="text-sm text-gray-500 font-semibold uppercase tracking-wide flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        Proof of Ownership
+                      </span>
+                      <div className="bg-orange-50 border-l-4 border-orange-500 p-5 rounded-lg">
+                        <p className="text-gray-900 leading-relaxed whitespace-pre-wrap">
+                          {viewingClaim.proofOfOwnership || 'No proof of ownership provided'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {viewingClaim.imageUrl && (
+                      <div className="flex flex-col gap-3 pt-6 border-t-2 border-gray-200">
+                        <span className="text-sm text-gray-500 font-semibold uppercase tracking-wide flex items-center gap-2">
+                          <ImageIcon className="w-4 h-4" />
+                          Supporting Image
+                        </span>
+                        <div className="mt-2">
+                          <img
+                            src={viewingClaim.imageUrl}
+                            alt="Claim proof"
+                            className="w-full h-96 object-cover rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => {
+                              setPreviewImageUrl(viewingClaim.imageUrl);
+                              setIsPreviewOpen(true);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {viewingClaim.reviewNotes && (
+                      <div className="flex flex-col gap-3 pt-6 border-t-2 border-gray-200">
+                        <span className="text-sm text-gray-500 font-semibold uppercase tracking-wide">Review Notes</span>
+                        <div className="bg-blue-50 border-l-4 border-blue-500 p-5 rounded-lg">
+                          <p className="text-gray-900 leading-relaxed">{viewingClaim.reviewNotes}</p>
+                          {viewingClaim.reviewedBy && (
+                            <p className="text-sm text-gray-600 mt-3">
+                              Reviewed by: {viewingClaim.reviewedBy.name}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              {viewingClaim.status === 'Pending' && (
+                <div className="space-y-6">
+                  {/* Moderator Information Card */}
+                  <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-2xl shadow-lg p-6 border border-orange-200">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <UserCircle className="w-5 h-5 text-orange-600" />
+                      Moderator Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-white rounded-lg p-4">
+                        <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Moderator Name</p>
+                        <p className="text-lg font-semibold text-gray-900">{user?.name || 'N/A'}</p>
+                      </div>
+                      <div className="bg-white rounded-lg p-4">
+                        <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Email Address</p>
+                        <p className="text-sm text-gray-700 font-medium">{user?.email || 'N/A'}</p>
+                      </div>
+                      <div className="bg-white rounded-lg p-4">
+                        <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Role</p>
+                        <p className="text-sm font-semibold text-orange-600">Moderator</p>
+                      </div>
+                      <div className="bg-white rounded-lg p-4">
+                        <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Review Time</p>
+                        <p className="text-sm text-gray-700 font-medium">{new Date().toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Review Actions */}
+                  <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-6">Review Actions</h3>
+                    <div className="flex gap-6">
+                      <button
+                        onClick={() => {
+                          openReviewModal(viewingClaim, 'Approved');
+                          setViewingClaim(null);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-3 px-8 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all font-semibold text-lg shadow-md hover:shadow-lg active:scale-95"
+                      >
+                        <Check className="w-6 h-6" />
+                        Approve Claim
+                      </button>
+                      <button
+                        onClick={() => {
+                          openReviewModal(viewingClaim, 'Rejected');
+                          setViewingClaim(null);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-3 px-8 py-4 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all font-semibold text-lg shadow-md hover:shadow-lg active:scale-95"
+                      >
+                        <X className="w-6 h-6" />
+                        Reject Claim
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

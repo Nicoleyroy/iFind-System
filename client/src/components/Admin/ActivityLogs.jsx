@@ -16,7 +16,10 @@ const ActivityLogs = () => {
   const [filteredLogs, setFilteredLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('all');
+  const [filterRole, setFilterRole] = useState('all'); // 'all', 'admin', 'moderator', 'system'
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('date'); // 'date', 'name', 'action'
+  const [sortOrder, setSortOrder] = useState('desc'); // 'asc', 'desc'
   const [stats, setStats] = useState({
     claim_approved: 0,
     claim_rejected: 0,
@@ -26,35 +29,46 @@ const ActivityLogs = () => {
   });
 
   useEffect(() => {
+    // Initial load
     fetchLogs();
     fetchStats();
+
+    // Listen for activity events dispatched by other components
+    const onActivityUpdated = () => {
+      fetchLogs();
+      fetchStats();
+    };
+
+    window.addEventListener('activity:updated', onActivityUpdated);
+    return () => window.removeEventListener('activity:updated', onActivityUpdated);
   }, []);
 
   useEffect(() => {
-    filterLogs();
-  }, [logs, filterType, searchTerm]);
+    // Recompute filtered list whenever source logs or filter options change
+    setFilteredLogs(applyFiltersToList(logs));
+  }, [logs, filterType, filterRole, searchTerm, sortBy, sortOrder]);
 
   const fetchLogs = async () => {
     setLoading(true);
     try {
       const response = await fetch(API_ENDPOINTS.AUDIT_LOGS);
       const data = await response.json();
-      
+
       if (data.data && Array.isArray(data.data)) {
-        // Transform backend audit logs to frontend format
         const transformedLogs = data.data.map(log => ({
           id: log._id,
           type: getLogType(log.action),
-          user: log.moderatorId?.email || log.moderatorId?.name || 'System',
-          userName: log.moderatorId?.name || 'Unknown',
+          user: log.moderatorId?.email || log.adminId?.email || log.actorEmail || log.actor || 'System',
+          userName: log.moderatorId?.name || log.adminId?.name || log.actorName || log.actor || 'Unknown',
+          actorRole: log.moderatorId?.role || log.adminId?.role || log.role || log.actorRole || 'system',
           action: formatAction(log.action),
           details: log.details || getDefaultDetails(log),
-          timestamp: log.createdAt,
+          timestamp: log.createdAt || log.timestamp,
           targetType: log.targetType,
           targetInfo: log.targetInfo,
           metadata: log.metadata,
-        }));
-        
+        })).filter(log => ['admin', 'moderator'].includes((log.actorRole || '').toLowerCase()));
+
         setLogs(transformedLogs);
       } else {
         setLogs([]);
@@ -71,7 +85,7 @@ const ActivityLogs = () => {
     try {
       const response = await fetch(API_ENDPOINTS.AUDIT_LOGS_STATS);
       const data = await response.json();
-      
+
       if (data.data && data.data.byAction) {
         setStats(data.data.byAction);
       }
@@ -81,6 +95,7 @@ const ActivityLogs = () => {
   };
 
   const getLogType = (action) => {
+    if (!action) return 'system';
     if (action.includes('claim')) return 'admin_action';
     if (action.includes('item')) return 'item_action';
     if (action.includes('user')) return 'admin_action';
@@ -95,6 +110,7 @@ const ActivityLogs = () => {
       'item_deleted': 'Item Deleted',
       'user_banned': 'User Banned',
     };
+    if (!action) return 'Action';
     return actionMap[action] || action.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   };
 
@@ -109,23 +125,40 @@ const ActivityLogs = () => {
     return actionDetails[log.action] || 'Action performed';
   };
 
-  const filterLogs = () => {
-    let filtered = [...logs];
+  const applyFiltersToList = (list) => {
+    let filtered = [...list];
 
     if (filterType !== 'all') {
       filtered = filtered.filter((log) => log.type === filterType);
     }
 
+    if (filterRole !== 'all') {
+      filtered = filtered.filter((log) => (log.actorRole || '').toLowerCase() === filterRole);
+    }
+
     if (searchTerm) {
       filtered = filtered.filter(
         (log) =>
-          log.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          log.details.toLowerCase().includes(searchTerm.toLowerCase())
+          (log.user || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (log.action || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (log.details || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    setFilteredLogs(filtered);
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      if (sortBy === 'name') {
+        comparison = (a.userName || a.user).localeCompare(b.userName || b.user);
+      } else if (sortBy === 'action') {
+        comparison = (a.action || '').localeCompare(b.action || '');
+      } else { // date
+        comparison = new Date(b.timestamp) - new Date(a.timestamp);
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return filtered;
   };
 
   const formatDate = (dateString) => {
@@ -178,6 +211,15 @@ const ActivityLogs = () => {
       default:
         return 'bg-gray-100 text-gray-700';
     }
+  };
+
+  const getActivityDotColor = (log) => {
+    const action = (log.action || '').toLowerCase();
+    if (action.includes('reject') || action.includes('delete') || action.includes('ban')) return 'bg-red-500';
+    if (action.includes('approve') || action.includes('verify') || action.includes('restore')) return 'bg-green-500';
+    if (log.type === 'admin_action') return 'bg-purple-500';
+    if (log.type === 'item_action') return 'bg-blue-500';
+    return 'bg-gray-400';
   };
 
   const getTotalByType = (type) => {
@@ -262,7 +304,7 @@ const ActivityLogs = () => {
 
           {/* Filters */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div className="relative">
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
@@ -284,7 +326,48 @@ const ActivityLogs = () => {
                 <option value="item_action">Item Actions</option>
                 <option value="system">System Events</option>
               </select>
+              <select
+                value={filterRole}
+                onChange={(e) => setFilterRole(e.target.value)}
+                className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                <option value="all">Admin & Moderator</option>
+                <option value="admin">Admin Only</option>
+                <option value="moderator">Moderator Only</option>
+              </select>
             </div>
+            
+            {/* Sort Controls */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-sm font-medium text-gray-600">Sort by:</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setSortBy('date'); setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc'); }}
+                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                    sortBy === 'date' ? 'bg-orange-100 text-orange-700 font-medium' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Date {sortBy === 'date' && (sortOrder === 'desc' ? '↓' : '↑')}
+                </button>
+                <button
+                  onClick={() => { setSortBy('name'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}
+                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                    sortBy === 'name' ? 'bg-orange-100 text-orange-700 font-medium' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </button>
+                <button
+                  onClick={() => { setSortBy('action'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}
+                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                    sortBy === 'action' ? 'bg-orange-100 text-orange-700 font-medium' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Action {sortBy === 'action' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </button>
+              </div>
+            </div>
+            
             <p className="text-sm text-gray-600 mt-4">
               Showing {filteredLogs.length} of {logs.length} activity logs
             </p>
@@ -292,8 +375,11 @@ const ActivityLogs = () => {
 
           {/* Logs Timeline */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
+              <p className="text-sm text-gray-600 mt-1">Latest admin and moderator transactions</p>
+            </div>
             <div className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Recent Activity</h3>
               <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
                 {loading ? (
                   <div className="flex items-center justify-center h-64">
@@ -306,28 +392,18 @@ const ActivityLogs = () => {
                   <div className="text-center py-8 text-gray-500">No logs found</div>
                 ) : (
                   filteredLogs.map((log) => (
-                    <div key={log.id} className="flex items-start gap-4 p-4 hover:bg-gray-50 rounded-lg transition-colors">
-                      <div className={`p-3 rounded-lg ${getTypeColor(log.type)}`}>
-                        {getTypeIcon(log.type)}
-                      </div>
+                    <div key={log.id} className="flex gap-3">
+                      <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${getActivityDotColor(log)}`}></div>
                       <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="text-sm font-semibold text-gray-900">{log.action}</h4>
-                          <span className="text-xs text-gray-500">{formatDate(log.timestamp)}</span>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-2">{log.details}</p>
-                        <div className="flex items-center gap-3 text-xs text-gray-500">
-                          <span className="flex items-center gap-1">
-                            <UserCircleIcon className="w-3.5 h-3.5" />
-                            {log.userName || log.user}
-                          </span>
-                          {log.targetInfo && (
-                            <>
-                              <span>•</span>
-                              <span>{log.targetInfo.name || log.targetInfo.email}</span>
-                            </>
-                          )}
-                        </div>
+                        <p className="text-sm text-gray-900">
+                          <span className="font-semibold">{log.userName || log.user || 'System'}</span>
+                          <span className="ml-1 text-gray-800">{log.action}</span>
+                          {log.targetInfo?.name ? <span className="text-gray-500"> • {log.targetInfo.name}</span> : null}
+                        </p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {log.details}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">{formatDate(log.timestamp)}</p>
                       </div>
                     </div>
                   ))

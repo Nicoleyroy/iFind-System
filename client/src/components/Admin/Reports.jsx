@@ -9,6 +9,7 @@ import {
   ShieldExclamationIcon,
 } from '@heroicons/react/24/outline';
 import { API_ENDPOINTS } from '../../utils/constants';
+import { confirm, success as swalSuccess, error as swalError } from '../../utils/swal';
 import AdminSidebar from '../layout/AdminSidebar';
 
 const Reports = () => {
@@ -188,7 +189,7 @@ const Reports = () => {
       
     } catch (error) {
       console.error('Error fetching user details:', error);
-      alert('Failed to load user details');
+      swalError('Error', 'Failed to load user details');
     } finally {
       setActivitiesLoading(false);
     }
@@ -201,16 +202,18 @@ const Reports = () => {
   };
 
   const handleResolve = async (reportId) => {
-    if (!window.confirm('Mark this report as resolved? This indicates the issue has been reviewed and handled.')) return;
-    
+    const ok = await confirm('Resolve report?', 'Mark this report as resolved? This indicates the issue has been reviewed and handled.');
+    if (!ok) return;
+
     setReports(reports.map(r => 
       r.id === reportId ? { ...r, status: 'resolved' } : r
     ));
   };
 
   const handleSuspendUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to suspend this user?')) return;
-    
+    const ok = await confirm('Suspend user?', 'Are you sure you want to suspend this user?');
+    if (!ok) return;
+
     try {
       const response = await fetch(API_ENDPOINTS.USER_BY_ID(userId), {
         method: 'PUT',
@@ -219,21 +222,22 @@ const Reports = () => {
       });
 
       if (response.ok) {
-        alert('User suspended successfully');
+        swalSuccess('Success', 'User suspended successfully');
         fetchReports(); // Refresh reports
       } else {
         const data = await response.json();
-        alert(data.message || 'Failed to suspend user');
+        swalError('Error', data.message || 'Failed to suspend user');
       }
     } catch (error) {
       console.error('Error suspending user:', error);
-      alert(`Error: ${error.message}`);
+      swalError('Error', `Error: ${error.message}`);
     }
   };
 
   const handleActivateUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to activate this user?')) return;
-    
+    const ok = await confirm('Activate user?', 'Are you sure you want to activate this user?');
+    if (!ok) return;
+
     try {
       const response = await fetch(API_ENDPOINTS.USER_BY_ID(userId), {
         method: 'PUT',
@@ -242,15 +246,15 @@ const Reports = () => {
       });
 
       if (response.ok) {
-        alert('User activated successfully');
+        swalSuccess('Success', 'User activated successfully');
         fetchReports(); // Refresh reports
       } else {
         const data = await response.json();
-        alert(data.message || 'Failed to activate user');
+        swalError('Error', data.message || 'Failed to activate user');
       }
     } catch (error) {
       console.error('Error activating user:', error);
-      alert(`Error: ${error.message}`);
+      swalError('Error', `Error: ${error.message}`);
     }
   };
 

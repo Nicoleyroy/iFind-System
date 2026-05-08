@@ -37,13 +37,22 @@ const LostItemSchema = new Schema(
       type: String,
       default: '',
     },
+    images: {
+      type: [String],
+      default: [],
+    },
     status: {
       type: String,
       enum: {
-        values: ['Active', 'Archived', 'Deleted', 'Unclaimed', 'Pending', 'Claimed'],
-        message: 'Status must be Active, Archived, Deleted, Unclaimed, Pending, or Claimed',
+        values: ['Active', 'Archived', 'Deleted', 'Unclaimed', 'Pending', 'Claimed', 'Returned'],
+        message: 'Status must be Active, Archived, Deleted, Unclaimed, Pending, Claimed, or Returned',
       },
       default: 'Active',
+    },
+    // persisted flag to indicate the item was ever marked returned (even if later archived)
+    wasReturned: {
+      type: Boolean,
+      default: false,
     },
     userId: {
       type: Schema.Types.ObjectId,

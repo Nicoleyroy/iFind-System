@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
   Box,
@@ -7,6 +8,7 @@ import {
   List,
   Trash2,
   Archive,
+  CheckCircle,
   AlertCircle,
   Search,
   Filter,
@@ -22,6 +24,7 @@ import { API_ENDPOINTS } from "../../utils/constants";
 const STATUS_OPTIONS = [
   { value: "Active", label: "Active", color: "bg-blue-100", textColor: "text-blue-800", borderColor: "border-blue-300" },
   { value: "Archived", label: "Archived", color: "bg-amber-100", textColor: "text-amber-800", borderColor: "border-amber-300" },
+  { value: "Returned", label: "Returned", color: "bg-green-100", textColor: "text-green-800", borderColor: "border-green-300" },
 ];
 
 //notifications
@@ -153,7 +156,7 @@ const EmptyState = ({ onClearFilters }) => (
     </p>
     <button
       onClick={onClearFilters}
-      className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition font-medium"
+      className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-all font-medium hover:shadow-md active:scale-95"
       aria-label="Clear all filters"
     >
       Clear Filters
@@ -239,7 +242,7 @@ const ConfirmationModal = ({
           <button
             onClick={onCancel}
             disabled={isLoading}
-            className="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-medium transition-all hover:shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Cancel action"
           >
             Cancel
@@ -247,7 +250,7 @@ const ConfirmationModal = ({
           <button
             onClick={onConfirm}
             disabled={isLoading}
-            className={`px-6 py-3 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
+            className={`px-6 py-3 text-white rounded-lg font-medium transition-all hover:shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
               isDestructive
                 ? "bg-red-600 hover:bg-red-700"
                 : "bg-orange-600 hover:bg-orange-700"
@@ -265,15 +268,15 @@ const ConfirmationModal = ({
 
 const ActionButton = ({ icon: Icon, label, onClick, variant = "secondary", disabled = false }) => {
   const variantStyles = {
-    secondary: "bg-gray-600 hover:bg-gray-700 text-white",
-    danger: "bg-red-600 hover:bg-red-700 text-white",
+    secondary: "bg-gray-600 hover:bg-gray-700 active:bg-gray-800 text-white",
+    danger: "bg-red-600 hover:bg-red-700 active:bg-red-800 text-white",
   };
 
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`p-2 rounded-lg shadow transition min-h-10 min-w-10 flex items-center justify-center ${variantStyles[variant]} disabled:opacity-50 disabled:cursor-not-allowed`}
+      className={`p-2 rounded-lg shadow transition-all hover:shadow-md active:scale-95 min-h-10 min-w-10 flex items-center justify-center ${variantStyles[variant]} disabled:opacity-50 disabled:cursor-not-allowed`}
       aria-label={label}
       title={label}
     >
@@ -284,6 +287,7 @@ const ActionButton = ({ icon: Icon, label, onClick, variant = "secondary", disab
 
 // the main component - everything happens here
 const ModLostItemManagement = () => {
+  const navigate = useNavigate();
   // all the state we need to manage the page
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
@@ -294,7 +298,13 @@ const ModLostItemManagement = () => {
   const [metrics, setMetrics] = useState({
     activeLost: 0,
     archived: 0,
+    returned: 0,
   });
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [activeCard, setActiveCard] = useState(null);
 
   // stuff for the modals and toast notifications
   const [modal, setModal] = useState({
@@ -310,6 +320,84 @@ const ModLostItemManagement = () => {
   useEffect(() => {
     fetchItems();
   }, []);
+
+  useEffect(() => {
+    const loadNotifications = async () => {
+      const userId = user?._id || user?.id;
+      if (!userId) return;
+      try {
+        const res = await fetch(`${API_ENDPOINTS.NOTIFICATIONS}?userId=${userId}`);
+        const json = await res.json();
+        if (Array.isArray(json.data)) setNotifications(json.data);
+      } catch (e) {
+        console.warn('Failed to load moderator notifications', e);
+      }
+    };
+
+    const loadUnread = async () => {
+      const userId = user?._id || user?.id;
+      if (!userId) return;
+      try {
+        const res = await fetch(`${API_ENDPOINTS.NOTIFICATIONS_UNREAD_COUNT}?userId=${userId}`);
+        const json = await res.json();
+        if (json.data && typeof json.data.count === 'number') setUnreadCount(json.data.count);
+      } catch (e) {
+        console.warn('Failed to load unread count', e);
+      }
+    };
+
+    loadNotifications();
+    loadUnread();
+
+    const iv = setInterval(() => { loadNotifications(); loadUnread(); }, 30000);
+    return () => clearInterval(iv);
+  }, [user]);
+
+  const handleNotificationClick = async (notification) => {
+    const userId = user?._id || user?.id;
+    if (!notification) return;
+    if (!notification.read) {
+      try {
+        await fetch(API_ENDPOINTS.NOTIFICATION_READ(notification._id), { method: 'PUT' });
+        const res = await fetch(`${API_ENDPOINTS.NOTIFICATIONS}?userId=${userId}`);
+        const json = await res.json();
+        if (Array.isArray(json.data)) setNotifications(json.data);
+        const countRes = await fetch(`${API_ENDPOINTS.NOTIFICATIONS_UNREAD_COUNT}?userId=${userId}`);
+        const countJson = await countRes.json();
+        if (countJson.data && typeof countJson.data.count === 'number') setUnreadCount(countJson.data.count);
+      } catch (e) {
+        console.warn('Failed to mark notification read', e);
+      }
+    }
+
+    if (notification.relatedClaimId) {
+      navigate('/moderator/item-verification');
+      return;
+    }
+
+    if (notification.relatedItemId) {
+      navigate('/moderator/LostItem/Management');
+      return;
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    const userId = user?._id || user?.id;
+    if (!userId) return;
+    try {
+      await fetch(API_ENDPOINTS.NOTIFICATIONS_READ_ALL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      const res = await fetch(`${API_ENDPOINTS.NOTIFICATIONS}?userId=${userId}`);
+      const json = await res.json();
+      if (Array.isArray(json.data)) setNotifications(json.data);
+      setUnreadCount(0);
+    } catch (e) {
+      console.warn('Failed to mark all notifications read', e);
+    }
+  };
 
   const fetchItems = async () => {
     setLoading(true);
@@ -344,7 +432,12 @@ const ModLostItemManagement = () => {
       (item) => item.status === "Archived"
     ).length;
 
-    setMetrics({ activeLost: activeLost, archived });
+    // Count items that are currently Returned OR wereReturned (preserve visibility even if later archived)
+    const returned = itemsList.filter(
+      (item) => item.status === "Returned" || item.wasReturned === true
+    ).length;
+
+    setMetrics({ activeLost: activeLost, archived, returned });
   };
 
   // filter and search logic
@@ -354,10 +447,14 @@ const ModLostItemManagement = () => {
 
     // Apply status filter
     if (statusFilter !== "All") {
-      filtered = filtered.filter(
-        (item) =>
-          (item.status || "Active").toLowerCase() === statusFilter.toLowerCase()
-      );
+      filtered = filtered.filter((item) => {
+        const itemStatus = (item.status || "Active");
+        if (statusFilter.toLowerCase() === 'returned') {
+          // include items whose current status is Returned or that were marked returned before (wasReturned flag)
+          return (itemStatus === 'Returned') || (item.wasReturned === true);
+        }
+        return itemStatus.toLowerCase() === statusFilter.toLowerCase();
+      });
     }
     
     // Always exclude deleted items
@@ -368,9 +465,7 @@ const ModLostItemManagement = () => {
       const keyword = searchTerm.trim().toLowerCase();
       filtered = filtered.filter(
         (item) =>
-          item.name?.toLowerCase().includes(keyword) ||
-          item.location?.toLowerCase().includes(keyword) ||
-          item.description?.toLowerCase().includes(keyword)
+          item.name?.toLowerCase().includes(keyword)
       );
     }
 
@@ -395,6 +490,8 @@ const ModLostItemManagement = () => {
     });
   };
 
+  
+
   // send archive request to API
   const handleArchive = async () => {
     if (!modal.id) return;
@@ -402,8 +499,11 @@ const ModLostItemManagement = () => {
     setModal((prev) => ({ ...prev, isLoading: true }));
 
     try {
-      await axios.put(API_ENDPOINTS.LOST_ITEM_BY_ID(modal.id), { status: "Archived" });
-      
+      await axios.put(API_ENDPOINTS.LOST_ITEM_BY_ID(modal.id), { 
+        status: "Archived",
+        moderatorId: user._id || user.id
+      });
+
       setItems((prev) =>
         prev.map((item) =>
           item._id === modal.id
@@ -411,13 +511,13 @@ const ModLostItemManagement = () => {
             : item
         )
       );
-      
+
       showToast("Item archived successfully", "success");
       closeModal();
     } catch (error) {
       console.error("Archive failed:", error);
       showToast(
-        error.response?.data?.message || "Failed to archive item. Please try again.",
+        error.response?.data?.message || "Item could not be archived. Try again.",
         "error"
       );
     } finally {
@@ -432,16 +532,17 @@ const ModLostItemManagement = () => {
     setModal((prev) => ({ ...prev, isLoading: true }));
 
     try {
-      await axios.delete(API_ENDPOINTS.LOST_ITEM_BY_ID(modal.id));
-      
+      await axios.delete(API_ENDPOINTS.LOST_ITEM_BY_ID(modal.id), {
+        data: { moderatorId: user._id || user.id }
+      });
+
       setItems((prev) => prev.filter((item) => item._id !== modal.id));
-      
       showToast("Item deleted successfully", "success");
       closeModal();
     } catch (error) {
       console.error("Delete failed:", error);
       showToast(
-        error.response?.data?.message || "Failed to delete item. Please try again.",
+        error.response?.data?.message || "Item could not be deleted. Try again.",
         "error"
       );
     } finally {
@@ -510,45 +611,84 @@ const ModLostItemManagement = () => {
             />
           </div>
         )}
-        {/* Modern Header with Gradient */}
-        <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white px-8 py-10">
-          <div className="flex items-center justify-between mb-6">
-            {/* Notification Bell */}
-            <div className="relative">
-              <button className="p-3 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-all">
-                <Bell className="w-6 h-6 text-white" />
-              </button>
-          
+        {/* Compact Header with Gradient */}
+        <div className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 text-white px-8 py-14">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <div>
+                <h1 className="text-3xl font-bold">Lost Items Management</h1>
+                <p className="text-white/85 text-base mt-1">Manage and track all lost items in the system</p>
+              </div>
             </div>
 
-            {/* Right: Profile & Export Button */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <button
+                  onClick={() => setShowNotifications(prev => !prev)}
+                  className="p-2.5 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-all relative"
+                >
+                  <Bell className="w-5 h-5 text-white" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-600 rounded-full flex items-center justify-center text-xs font-bold border-2 border-white">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {showNotifications && (
+                  <div className="absolute right-0 mt-3 w-96 z-50 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div className="p-3 border-b border-gray-100 flex items-center justify-between">
+                      <h3 className="text-sm font-bold">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <button onClick={handleMarkAllRead} className="text-xs text-orange-600 hover:text-orange-700">Mark all as read</button>
+                      )}
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="text-center p-6 text-gray-500">
+                          <Bell className="mx-auto h-10 w-10 text-gray-300" />
+                          <p className="mt-3">No notifications</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 p-3">
+                          {notifications.map(n => (
+                            <div
+                              key={n._id}
+                              onClick={() => { handleNotificationClick(n); setShowNotifications(false); }}
+                              className={`p-2 rounded-lg cursor-pointer ${n.read ? 'bg-gray-50 hover:bg-gray-100' : 'bg-blue-50 hover:bg-blue-100 border-l-4 border-blue-500'}`}
+                            >
+                              <p className={`text-sm font-semibold ${n.read ? 'text-gray-700' : 'text-gray-900'}`}>{n.title}</p>
+                              <p className="text-xs text-gray-600 mt-1 line-clamp-2">{n.message}</p>
+                              <p className="text-xs text-gray-400 mt-1">{new Date(n.createdAt).toLocaleString()}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <p className="text-white text-sm font-semibold leading-tight">JOANNA NICOLE YROY</p>
+                  <p className="text-white text-sm font-semibold leading-tight">{user?.name || 'Moderator'}</p>
                   <p className="text-white/70 text-xs">Moderator</p>
                 </div>
                 <div className="w-11 h-11 bg-orange-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
-                  <span className="text-white text-lg font-bold">J</span>
+                  <span className="text-white text-lg font-bold">{(user?.name || 'M').charAt(0).toUpperCase()}</span>
                 </div>
               </div>
-            </div>
-          </div>
-     
-
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">Lost Items Management</h1>
-              <p className="text-orange-100 text-lg">Manage and track all lost items in the system</p>
             </div>
           </div>
         </div>
 
         {/* Metrics Section */}
         <section className="px-8 py-6">
-          <div className="-mt-12 mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border border-gray-100">
+          <div className="mt-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div 
+                className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border-2 border-gray-100"
+              >
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-gray-500 text-sm font-medium mb-2">Active Items</h3>
@@ -558,12 +698,14 @@ const ModLostItemManagement = () => {
                     <Box className="w-8 h-8 text-blue-600" />
                   </div>
                 </div>
-                <button className="mt-3 w-full px-4 py-2 bg-blue-50 hover:bg-blue-100 rounded-lg text-sm font-semibold text-blue-600 transition-colors">
+                <button onClick={() => setStatusFilter('Active')} className="mt-3 w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold shadow-sm hover:shadow-md hover:bg-blue-700 transition-all active:scale-95">
                   Detail
                 </button>
               </div>
               
-              <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border border-gray-100">
+              <div 
+                className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border-2 border-gray-100"
+              >
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-gray-500 text-sm font-medium mb-2">Archived</h3>
@@ -573,7 +715,23 @@ const ModLostItemManagement = () => {
                     <Archive className="w-8 h-8 text-green-600" />
                   </div>
                 </div>
-                <button className="mt-3 w-full px-4 py-2 bg-green-50 hover:bg-green-100 rounded-lg text-sm font-semibold text-green-600 transition-colors">
+                <button onClick={() => setStatusFilter('Archived')} className="mt-3 w-full px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold shadow-sm hover:shadow-md hover:bg-green-700 transition-all active:scale-95">
+                  Manage
+                </button>
+              </div>
+              <div 
+                className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border-2 border-gray-100"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="text-gray-500 text-sm font-medium mb-2">Returned</h3>
+                    <p className="text-4xl font-bold text-gray-900">{metrics.returned}</p>
+                  </div>
+                  <div className="p-3 bg-green-50 rounded-xl">
+                    <CheckCircle className="w-8 h-8 text-green-600" />
+                  </div>
+                </div>
+                <button onClick={() => setStatusFilter('Returned')} className="mt-3 w-full px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold shadow-sm hover:shadow-md hover:bg-green-700 transition-all active:scale-95">
                   Manage
                 </button>
               </div>
@@ -613,7 +771,7 @@ const ModLostItemManagement = () => {
             <div className="relative min-w-max">
               <Filter className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 pointer-events-none" />
               <select
-                className="pl-12 pr-10 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition appearance-none cursor-pointer bg-white hover:border-slate-400 font-medium text-slate-900"
+                className="pl-12 pr-10 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all appearance-none cursor-pointer bg-white hover:border-slate-400 hover:bg-slate-50 font-medium text-slate-900"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 aria-label="Filter by status"
@@ -621,6 +779,7 @@ const ModLostItemManagement = () => {
                 <option value="All">All Status</option>
                 <option value="Active">Active</option>
                 <option value="Archived">Archived</option>
+                <option value="Returned">Returned</option>
               </select>
               <ChevronDown className="absolute right-3 top-3.5 w-5 h-5 text-slate-400 pointer-events-none" />
             </div>
@@ -629,7 +788,7 @@ const ModLostItemManagement = () => {
             <div className="flex gap-2">
               <button
                 onClick={fetchItems}
-                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition font-medium flex items-center gap-2 border border-slate-300"
+                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-all font-medium flex items-center gap-2 border border-slate-300 hover:shadow-md active:scale-95"
                 aria-label="Refresh items"
                 title="Refresh items"
               >
@@ -640,13 +799,14 @@ const ModLostItemManagement = () => {
               <button
                 onClick={handleExportPDF}
                 disabled={filteredItems.length === 0}
-                className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-900"
+                className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition-all font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-900 hover:shadow-md active:scale-95"
                 aria-label="Export filtered items as PDF"
                 title="Export filtered items as PDF"
               >
                 <FileText className="w-4 h-4" />
                 Export
               </button>
+              
             </div>
           </div>
 
@@ -682,7 +842,7 @@ const ModLostItemManagement = () => {
                   filteredItems.map((item) => (
                     <tr
                       key={item._id}
-                      className="hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-b-0"
+                      className="hover:bg-slate-50 transition-all border-b border-slate-50 last:border-b-0 hover:outline hover:outline-2 hover:outline-blue-400 hover:outline-offset-[-2px]"
                       role="row"
                     >
                       <td className="px-6 py-4">

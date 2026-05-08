@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import Navbar from "../layout/navbar";
+import { API_ENDPOINTS } from '../../utils/constants';
 
 const ContactUs = () => {
   const [formData, setFormData] = useState({
@@ -19,31 +20,27 @@ const ContactUs = () => {
 
     // Name validation
     if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
+      newErrors.name = 'Full Name is required.';
     }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = 'Email Address is required.';
     } else if (!emailRegex.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = 'Please enter a valid email address.';
     }
 
     // Subject validation
     if (!formData.subject.trim()) {
-      newErrors.subject = 'Subject is required';
-    } else if (formData.subject.trim().length < 3) {
-      newErrors.subject = 'Subject must be at least 3 characters';
+      newErrors.subject = 'Subject is required.';
     }
 
     // Message validation
     if (!formData.message.trim()) {
-      newErrors.message = 'Message is required';
-    } else if (formData.message.trim().length < 10) {
-      newErrors.message = 'Message must be at least 10 characters';
+      newErrors.message = 'Message is required.';
+    } else if (formData.message.trim().length > 500) {
+      newErrors.message = 'Message is too long.';
     }
 
     setErrors(newErrors);
@@ -79,15 +76,17 @@ const ContactUs = () => {
     setSubmitStatus(null);
 
     try {
-      // Simulate API call - Replace with actual backend endpoint
-      // const response = await fetch('/api/contact', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData)
-      // });
+      const response = await fetch(API_ENDPOINTS.CONTACT_US, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
 
-      // Simulate successful submission
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to send message');
+      }
 
       setSubmitStatus('success');
       // Reset form
@@ -120,7 +119,7 @@ const ContactUs = () => {
     <>
       <Navbar />
       
-      <main className="min-h-screen bg-[#FCFCF9] px-4 py-8 sm:px-6 lg:px-8">
+      <main className="min-h-screen px-4 py-8 sm:px-6 lg:px-8" style={{ background: 'linear-gradient(to bottom right, #fff7ed, #fef2f2, #fffbeb)' }}>
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
@@ -169,14 +168,14 @@ const ContactUs = () => {
                 <div className="space-y-4">
                   {/* Email */}
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-[#C0152F]/10 rounded-lg">
-                      <Mail className="w-5 h-5 text-[#C0152F]" />
+                    <div className="p-2 bg-orange-50 rounded-lg">
+                      <Mail className="w-5 h-5 text-orange-500" />
                     </div>
                     <div>
                       <h3 className="text-sm font-semibold text-[#134252] mb-1">Email</h3>
                       <a 
                         href="mailto:support@ifind.com" 
-                        className="text-sm text-[#626C71] hover:text-[#C0152F] transition-colors"
+                        className="text-sm text-[#626C71] hover:text-orange-500 transition-colors"
                       >
                         support@ifind.com
                       </a>
@@ -185,14 +184,14 @@ const ContactUs = () => {
 
                   {/* Phone */}
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-[#C0152F]/10 rounded-lg">
-                      <Phone className="w-5 h-5 text-[#C0152F]" />
+                    <div className="p-2 bg-orange-50 rounded-lg">
+                      <Phone className="w-5 h-5 text-orange-500" />
                     </div>
                     <div>
                       <h3 className="text-sm font-semibold text-[#134252] mb-1">Phone</h3>
                       <a 
                         href="tel:+1234567890" 
-                        className="text-sm text-[#626C71] hover:text-[#C0152F] transition-colors"
+                        className="text-sm text-[#626C71] hover:text-orange-500 transition-colors"
                       >
                         +1 (234) 567-8900
                       </a>
@@ -201,8 +200,8 @@ const ContactUs = () => {
 
                   {/* Address */}
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-[#C0152F]/10 rounded-lg">
-                      <MapPin className="w-5 h-5 text-[#C0152F]" />
+                    <div className="p-2 bg-orange-50 rounded-lg">
+                      <MapPin className="w-5 h-5 text-orange-500" />
                     </div>
                     <div>
                       <h3 className="text-sm font-semibold text-[#134252] mb-1">Office</h3>
@@ -252,7 +251,7 @@ const ContactUs = () => {
                       htmlFor="name" 
                       className="block text-sm font-medium text-[#134252] mb-2"
                     >
-                      Full Name <span className="text-[#C0152F]">*</span>
+                      Full Name <span className="text-orange-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -284,7 +283,7 @@ const ContactUs = () => {
                       htmlFor="email" 
                       className="block text-sm font-medium text-[#134252] mb-2"
                     >
-                      Email Address <span className="text-[#C0152F]">*</span>
+                      Email Address <span className="text-orange-500">*</span>
                     </label>
                     <input
                       type="email"
@@ -316,7 +315,7 @@ const ContactUs = () => {
                       htmlFor="subject" 
                       className="block text-sm font-medium text-[#134252] mb-2"
                     >
-                      Subject <span className="text-[#C0152F]">*</span>
+                      Subject <span className="text-orange-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -348,7 +347,7 @@ const ContactUs = () => {
                       htmlFor="message" 
                       className="block text-sm font-medium text-[#134252] mb-2"
                     >
-                      Message <span className="text-[#C0152F]">*</span>
+                      Message <span className="text-orange-500">*</span>
                     </label>
                     <textarea
                       id="message"
@@ -380,7 +379,7 @@ const ContactUs = () => {
                   {/* Submit Button */}
                   <div className="flex items-center justify-between pt-4">
                     <p className="text-sm text-[#626C71]">
-                      <span className="text-[#C0152F]">*</span> Required fields
+                      <span className="text-orange-500">*</span> Required fields
                     </p>
                     <button
                       type="submit"
@@ -388,7 +387,7 @@ const ContactUs = () => {
                       className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium text-white transition-all shadow-sm hover:shadow ${
                         isSubmitting
                           ? 'bg-gray-400 cursor-not-allowed'
-                          : 'bg-[#C0152F] hover:bg-[#A01327] active:bg-[#8B1122]'
+                          : 'bg-orange-500 hover:bg-orange-600 active:bg-orange-700'
                       }`}
                       aria-busy={isSubmitting}
                     >

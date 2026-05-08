@@ -36,32 +36,32 @@ function ForgotPassword() {
   };
 
   return (
-    <div className="fixed inset-0 w-screen h-screen bg-[rgba(50,20,20,0.14)] backdrop-blur-md flex items-center justify-center z-50">
+    <div className="fixed inset-0 w-screen h-screen bg-black/20 backdrop-blur-md flex items-center justify-center z-50">
       <div
-        className="text-white rounded-[2.1rem] shadow-[0_8px_30px_rgba(60,0,0,0.18)] w-[420px] flex flex-col items-center p-8"
+        className="text-white rounded-[2.1rem] shadow-[0_8px_30px_rgba(255,140,0,0.3)] w-[420px] flex flex-col items-center p-8"
         style={{
           background:
-            'radial-gradient(120% 140% at 0% 0%, #b21a10 0%, #5b0905 100%)',
+            'linear-gradient(135deg, #f97316 0%, #ea580c 50%, #c2410c 100%)',
         }}
       >
         <div className="text-4xl font-extrabold tracking-wide mb-1">iFind</div>
         <div className="text-xl font-extrabold mb-1">Forgot your Password?</div>
-        <div className="text-lg mb-4 text-[#ffe0c5]">Enter your Email Address</div>
+        <div className="text-lg mb-4 text-orange-100">Enter your Email Address</div>
 
         <input
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           type="email"
-          className="w-full bg-white text-[#430d08] rounded-md px-4 py-3 text-base mb-4"
+          className="w-full bg-white text-gray-900 rounded-md px-4 py-3 text-base mb-4 focus:outline-none focus:ring-2 focus:ring-orange-300"
           placeholder="e.g. username@ifind.com"
         />
 
-        {error && <div className="text-red-200 mb-2 w-full">{error}</div>}
+        {error && <div className="text-orange-100 bg-orange-900/30 rounded-md px-3 py-2 mb-2 w-full text-sm">{error}</div>}
 
         <button
           type="button"
           onClick={handleSend}
-          className="w-full bg-[#fff3e2] text-[#7e2217] rounded-md py-3 font-bold mb-4 disabled:opacity-60"
+          className="w-full bg-white text-orange-600 rounded-md py-3 font-bold mb-4 hover:bg-orange-50 transition-colors disabled:opacity-60"
           disabled={loading}
         >
           {loading ? 'Sending...' : 'Send Code'}
@@ -70,7 +70,7 @@ function ForgotPassword() {
         <button
           type="button"
           onClick={() => navigate('/login')}
-          className="bg-transparent text-[#ffe0c5] font-semibold text-base self-start flex items-center gap-2"
+          className="bg-transparent text-orange-100 hover:text-white font-semibold text-base self-start flex items-center gap-2 transition-colors"
         >
           <span className="mr-2">←</span> Back To Login
         </button>
